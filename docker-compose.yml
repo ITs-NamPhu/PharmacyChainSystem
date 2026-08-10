@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pharmacy-db
+
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+
+    ports:
+      - "1433:1433"
+
+    volumes:
+      - sql_data:/var/opt/mssql
+
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: PharmacyManagement/Dockerfile
+
+    container_name: pharmacy-api
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    ports:
+      - "5000:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ConnectionStrings__PharSystemConnection: "Server=db,1433;Database=PharmacySystem;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+
+  react:
+    build:
+      context: ./frontend/pharmacymanage
+      dockerfile: Dockerfile
+
+    container_name: pharmacy-react
+
+    depends_on:
+      - api
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+
+volumes:
+  sql_data:

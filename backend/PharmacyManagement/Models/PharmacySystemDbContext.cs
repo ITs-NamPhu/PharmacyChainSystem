@@ -1,0 +1,124 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Build.Tasks.Deployment.Bootstrapper;
+using Microsoft.EntityFrameworkCore;
+using System.Drawing;
+
+namespace PharmacyManagement.Models
+{
+    public class PharmacySystemDbContext : DbContext
+    {
+        public PharmacySystemDbContext(DbContextOptions<PharmacySystemDbContext> options) : base(options) { }
+
+        public DbSet<Role> Role { get; set; }
+        public DbSet<User> User { get; set; }
+        public DbSet<Branch> Branch { get; set; }
+        public DbSet<WareHouse> WareHouse { get; set; }
+        public DbSet<Supplier> Supplier { get; set; }
+        public DbSet<UserBranch> UserBranch { get; set; }
+        public DbSet<Permission> Permission { get; set; }
+        public DbSet<RolePermission> RolePermission { get; set; }
+
+        public DbSet<Customer> Customer { get; set; }
+        public DbSet<CustomerType> CustomerType { get; set; }
+        public DbSet<CustomerDebtSummary> CustomerDebtSummary { get; set; }
+
+        public DbSet<ManuFacturer> ManuFacturer { get; set; }
+        public DbSet<MedicineCategory> MedicineCategory { get; set; }
+        public DbSet<Unit> Unit { get; set; }
+        public DbSet<UnitConversion> UnitConversion { get; set; }
+        public DbSet<Medicine> Medicine { get; set; }
+        public DbSet<Batch> Batch { get; set; }
+
+        public DbSet<PriceList> PriceList { get; set; }
+        public DbSet<PriceListItem> PriceListItem { get; set; }
+        public DbSet<Promotion> Promotion { get; set; }
+        public DbSet<PromotionItem> PromotionItem { get; set; }
+
+
+        public DbSet<GoodsReceipt> GoodsReceipt { get; set; }
+        public DbSet<GoodsReceiptItem> GoodsReceiptItem { get; set; }
+        public DbSet<Invoice> Invoice { get; set; }
+        public DbSet<InvoiceItem> InvoiceItem { get; set; }
+        public DbSet<PurchaseReturn> PurchaseReturn { get; set; }
+        public DbSet<PurchaseReturnItem> PurchaseReturnItem { get; set; }
+        public DbSet<SalesReturn> SalesReturn { get; set; }
+        public DbSet<SalesReturnItem> SalesReturnItem { get; set; }
+        public DbSet<Receipt> Receipt { get; set; }
+
+        public DbSet<DestroyReceipt> DestroyReceipt { get; set; }
+        public DbSet<DestroyReceiptItem> DestroyReceiptItem { get; set; }
+        public DbSet<StockTake> StockTake { get; set; }
+        public DbSet<StockTakeItem> StockTakeItem { get; set; }
+        public DbSet<StockAdjustment> StockAdjustment { get; set; }
+        public DbSet<StockAdjustmentItem> StockAdjustmentItem { get; set; }
+        public DbSet<RefreshToken> RefreshToken { get; set; }
+
+
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Role>().ToTable("Role");
+            modelBuilder.Entity<User>().ToTable("User");
+            modelBuilder.Entity<Branch>().ToTable("Branch");
+            modelBuilder.Entity<WareHouse>().ToTable("WareHouse");
+            modelBuilder.Entity<Supplier>().ToTable("Supplier");
+            modelBuilder.Entity<UserBranch>().ToTable("UserBranch");
+            modelBuilder.Entity<Permission>().ToTable("Permission");
+            modelBuilder.Entity<RolePermission>().ToTable("RolePermission");
+
+            modelBuilder.Entity<Customer>().ToTable("Customer");
+            modelBuilder.Entity<CustomerType>().ToTable("CustomerType");
+            modelBuilder.Entity<CustomerDebtSummary>().ToTable("CustomerDebtSummary");
+
+            modelBuilder.Entity<ManuFacturer>().ToTable("ManuFacturer");
+            modelBuilder.Entity<MedicineCategory>().ToTable("MedicineCategory");
+            modelBuilder.Entity<Unit>().ToTable("Unit");
+            modelBuilder.Entity<UnitConversion>().ToTable("UnitConversion");
+            modelBuilder.Entity<Medicine>().ToTable("Medicine");
+            modelBuilder.Entity<Batch>().ToTable("Batch");
+
+            modelBuilder.Entity<PriceList>().ToTable("PriceList");
+            modelBuilder.Entity<PriceListItem>().ToTable("PriceListItem");
+            modelBuilder.Entity<Promotion>().ToTable("Promotion");
+            modelBuilder.Entity<PromotionItem>().ToTable("PromotionItem");
+
+            modelBuilder.Entity<Invoice>().ToTable("Invoice");
+            modelBuilder.Entity<InvoiceItem>().ToTable("InvoiceItem");
+            modelBuilder.Entity<GoodsReceipt>().ToTable("GoodsReceipt");
+            modelBuilder.Entity<GoodsReceiptItem>().ToTable("GoodsReceiptItem");
+            modelBuilder.Entity<PurchaseReturn>().ToTable("PurchaseReturn");
+            modelBuilder.Entity<PurchaseReturnItem>().ToTable("PurchaseReturnItem");
+            modelBuilder.Entity<SalesReturn>().ToTable("SalesReturn");
+            modelBuilder.Entity<SalesReturnItem>().ToTable("SalesReturnItem");
+            modelBuilder.Entity<Receipt>().ToTable("Receipt");
+
+            modelBuilder.Entity<DestroyReceipt>().ToTable("DestroyReceipt");
+            modelBuilder.Entity<DestroyReceiptItem>().ToTable("DestroyReceiptItem");
+            modelBuilder.Entity<StockTake>().ToTable("StockTake");
+            modelBuilder.Entity<StockTakeItem>().ToTable("StockTakeItem");
+            modelBuilder.Entity<StockAdjustment>().ToTable("StockAdjustment");
+            modelBuilder.Entity<StockAdjustmentItem>().ToTable("StockAdjustmentItem");
+            modelBuilder.Entity<RefreshToken>().ToTable("RefreshToken");
+
+            modelBuilder.Entity<RolePermission>(entity =>
+            {
+                entity.HasKey(e => e.RolePermissionID);
+                entity.HasOne(e => e.Role)
+                    .WithMany(r => r.RolePermission)
+                    .HasForeignKey(e => e.RoleID);
+                entity.HasOne(e => e.Permission)
+                    .WithMany(p => p.RolePermission)
+                    .HasForeignKey(e => e.PermissionID);
+            });
+
+            modelBuilder.Entity<UserBranch>(entity =>
+            {
+                entity.HasOne(e => e.Role)
+                    .WithMany(r => r.UserBranch)
+                    .HasForeignKey(e => e.RoleID);
+            });
+
+        }
+    }
+}
+
