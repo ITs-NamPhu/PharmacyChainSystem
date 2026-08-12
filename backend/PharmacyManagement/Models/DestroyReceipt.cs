@@ -11,6 +11,8 @@ namespace PharmacyManagement.Models
         [StringLength(255)]
         public String Note { get; set; }
         public DateTime CreatedAt { get; set; }
+        public long? ApprovedBy { get; set; }
+        public DateTime? ApprovedAt { get; set; }
 
         public WareHouse? WareHouse { get; set; }
         public User? User { get; set; }

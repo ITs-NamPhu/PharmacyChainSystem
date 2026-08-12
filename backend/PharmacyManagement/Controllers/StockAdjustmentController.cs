@@ -1,0 +1,53 @@
+using Microsoft.AspNetCore.Mvc;
+using PharmacyManagement.DTOs.StockAdjustment;
+using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.Validators.PermissionHandle;
+
+namespace PharmacyManagement.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StockAdjustmentController : BaseController
+    {
+        private readonly IStockAdjustmentService _service;
+
+        public StockAdjustmentController(IStockAdjustmentService service)
+        {
+            _service = service;
+        }
+
+        [HttpPost]
+        [HasPermission("STOCK_ADJUSTMENT_CREATE")]
+        public async Task<IActionResult> Create(CreateStockAdjustmentRequest request)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.CreateAsync(request, userId);
+            return Success(result, "Create stock adjustment successfully.");
+        }
+
+        [HttpPost("{id}/approve")]
+        [HasPermission("STOCK_ADJUSTMENT_APPROVE")]
+        public async Task<IActionResult> Approve(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.ApproveAsync(id, userId);
+            return Success(null, "Approve stock adjustment successfully.");
+        }
+
+        [HttpGet("{id}")]
+        [HasPermission("STOCK_ADJUSTMENT_VIEW")]
+        public async Task<IActionResult> GetById(long id)
+        {
+            var result = await _service.GetByIdAsync(id);
+            return Success(result, "Get stock adjustment successfully.");
+        }
+
+        [HttpGet("GetAll")]
+        [HasPermission("STOCK_ADJUSTMENT_VIEW")]
+        public async Task<IActionResult> GetAll(int page, int count = 10, long warehouseId = 0)
+        {
+            var result = await _service.GetAllAsync(page, count, warehouseId);
+            return Success(result, "Get stock adjustments successfully.");
+        }
+    }
+}

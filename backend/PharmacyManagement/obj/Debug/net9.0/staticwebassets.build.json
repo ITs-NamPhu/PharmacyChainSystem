@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "WT385S9clPGFvdfGv6TTiITKS+Zv0J+JNXtEDLokqYs=",
+  "Hash": "C4tp/W7YHOmdByWpY8VJNMDkGgbU9YJvp2hIEP4MRlk=",
   "Source": "PharmacyManagement",
   "BasePath": "_content/PharmacyManagement",
   "Mode": "Default",
@@ -86,8 +86,8 @@
       "RelatedAsset": "E:\\Supply_pharmacy\\backend\\PharmacyManagement\\obj\\Debug\\net9.0\\scopedcss\\bundle\\PharmacyManagement.styles.css",
       "AssetTraitName": "Content-Encoding",
       "AssetTraitValue": "gzip",
-      "Fingerprint": "by2r53v5l3",
-      "Integrity": "s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4=",
+      "Fingerprint": "6gbwzcb8e2",
+      "Integrity": "Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "E:\\Supply_pharmacy\\backend\\PharmacyManagement\\obj\\Debug\\net9.0\\scopedcss\\bundle\\PharmacyManagement.styles.css"
@@ -470,7 +470,7 @@
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.008928571429"
+          "Quality": "0.008771929825"
         }
       ],
       "ResponseHeaders": [
@@ -480,15 +480,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "111"
+          "Value": "113"
         },
         {
           "Name": "ETag",
-          "Value": "\"s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4=\""
+          "Value": "\"Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Sat, 18 Jul 2026 16:59:22 GMT"
+          "Value": "Mon, 10 Aug 2026 13:58:14 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -557,7 +557,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Sat, 18 Jul 2026 16:59:22 GMT"
+          "Value": "Mon, 10 Aug 2026 13:58:14 GMT"
         },
         {
           "Name": "Link",
@@ -590,7 +590,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "111"
+          "Value": "113"
         },
         {
           "Name": "Content-Type",
@@ -598,11 +598,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4=\""
+          "Value": "\"Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Sat, 18 Jul 2026 16:59:22 GMT"
+          "Value": "Mon, 10 Aug 2026 13:58:14 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -628,7 +628,7 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4="
+          "Value": "sha256-Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc="
         }
       ]
     },
@@ -639,7 +639,7 @@
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.008928571429"
+          "Quality": "0.008771929825"
         }
       ],
       "ResponseHeaders": [
@@ -649,15 +649,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "111"
+          "Value": "113"
         },
         {
           "Name": "ETag",
-          "Value": "\"s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4=\""
+          "Value": "\"Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Sat, 18 Jul 2026 16:59:22 GMT"
+          "Value": "Mon, 10 Aug 2026 13:58:14 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -718,7 +718,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Sat, 18 Jul 2026 16:59:22 GMT"
+          "Value": "Mon, 10 Aug 2026 13:58:14 GMT"
         },
         {
           "Name": "Link",
@@ -743,7 +743,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "111"
+          "Value": "113"
         },
         {
           "Name": "Content-Type",
@@ -751,11 +751,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4=\""
+          "Value": "\"Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Sat, 18 Jul 2026 16:59:22 GMT"
+          "Value": "Mon, 10 Aug 2026 13:58:14 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -773,7 +773,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-s4g+UtCzuLBQgaY8O1pF1nhr7harXujE48b9Uds39u4="
+          "Value": "sha256-Cpsqqauk9PuazTq/wLcVmN+51IYkFMTBvKtkpRT1nVc="
         }
       ]
     }
