@@ -33,6 +33,8 @@ namespace PharmacyManagement.Services.Implements
             var batches = await _businessValidator.ValidateBatchesInWarehouseAsync(batchIds, request.WarehouseID);
 
             var stockTake = request.ToEntity(userId);
+
+
             stockTake.StockTakeItem = request.Items
                 .Select(item => item.ToEntity(0, batches[item.BatchID].QuantityInStock))
                 .ToList();
@@ -41,13 +43,15 @@ namespace PharmacyManagement.Services.Implements
                 ? StockTakeResult.Balanced
                 : StockTakeResult.Difference;
 
+
+
             await _repository.AddAsync(stockTake);
             await _repository.SaveChangesAsync();
 
             return (await GetByIdAsync(stockTake.StockTakeID))!;
         }
 
-        public async Task<StockTakeDetailResponse> CompleteAsync(long id, CompleteStockTakeRequest? request, long userId)
+        public async Task<StockTakeDetailResponse> CompleteAsync(long id, long userId)
         {
             var stockTake = await _repository.GetByIdAsync(id);
             if (stockTake == null)
@@ -59,26 +63,6 @@ namespace PharmacyManagement.Services.Implements
                     "ST005",
                     StatusCodes.Status400BadRequest);
 
-            if (request?.Items is { Count: > 0 })
-            {
-                var existingItems = stockTake.StockTakeItem?.ToDictionary(i => i.StockTakeItemID) ?? new Dictionary<long, StockTakeItem>();
-
-                foreach (var itemRequest in request.Items)
-                {
-                    if (!existingItems.TryGetValue(itemRequest.StockTakeItemID, out var item))
-                        throw new BusinessException(
-                            $"Stock take item ID {itemRequest.StockTakeItemID} not found.",
-                            "ST006",
-                            StatusCodes.Status400BadRequest);
-
-                    item.ActualQuantity = itemRequest.ActualQuantity;
-                    item.DifferenceQuantity = itemRequest.ActualQuantity - item.SystemQuantity;
-                }
-            }
-
-            stockTake.IsBalance = stockTake.StockTakeItem?.All(i => i.DifferenceQuantity == 0) == true
-                ? StockTakeResult.Balanced
-                : StockTakeResult.Difference;
             stockTake.Status = StockTakeStatus.Completed;
 
             _repository.Update(stockTake);

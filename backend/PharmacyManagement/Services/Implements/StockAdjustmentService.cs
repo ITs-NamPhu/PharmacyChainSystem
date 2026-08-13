@@ -29,11 +29,14 @@ namespace PharmacyManagement.Services.Implements
             var stockTake = await _businessValidator.ValidateStockTakeCanAdjustAsync(request.StockTakeID);
             await _businessValidator.EnsureNoAdjustmentExistsAsync(request.StockTakeID);
 
+            var batches = await _businessValidator.ValidateBatchesInWarehouseAsync(
+                request.Items.Select(i => i.BatchID),
+                stockTake.WarehouseID);
+
             foreach (var item in request.Items)
             {
-                var batch = await _businessValidator.ValidateBatchInWarehouseAsync(item.BatchID, stockTake.WarehouseID);
-                await _businessValidator.ValidateStockTakeItemLinkAsync(item.StockTakeItemID, request.StockTakeID, item.BatchID);
-                _businessValidator.ValidateStockNotNegative(batch, item.AdjustQuantity);
+                _businessValidator.ValidateStockTakeItemLink(item.StockTakeItemID, stockTake.StockTakeItem!, request.StockTakeID, item.BatchID);
+                _businessValidator.ValidateStockNotNegative(batches[item.BatchID], item.AdjustQuantity);
             }
 
             var adjustment = request.ToEntity(userId);
@@ -49,11 +52,14 @@ namespace PharmacyManagement.Services.Implements
 
                 foreach (var item in adjustment.StockAdjustmentItem!)
                 {
-                    if (!await _repository.TryAdjustStockAsync(item.BatchID, item.AdjustQuantity))
+                    if (!batches.TryGetValue(item.BatchID, out var batch)
+                        || batch.QuantityInStock + item.AdjustQuantity < 0)
                         throw new BusinessException(
                             $"Insufficient stock for batch ID {item.BatchID}.",
                             "SA012",
                             StatusCodes.Status400BadRequest);
+
+                    batch.QuantityInStock += item.AdjustQuantity;
                 }
 
                 stockTake.IsAdjusted = true;

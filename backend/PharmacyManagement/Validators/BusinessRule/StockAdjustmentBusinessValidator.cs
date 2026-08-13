@@ -50,30 +50,37 @@ namespace PharmacyManagement.Validators.BusinessRule
                     StatusCodes.Status400BadRequest);
         }
 
-        public async Task<Batch> ValidateBatchInWarehouseAsync(long batchId, long warehouseId)
+        public async Task<Dictionary<long, Batch>> ValidateBatchesInWarehouseAsync(
+            IEnumerable<long> batchIds,
+            long warehouseId)
         {
-            var batch = await _repository.GetBatchByIdAsync(batchId);
-            if (batch == null)
-                throw new BusinessException($"Batch ID {batchId} not found.", "SA006", StatusCodes.Status404NotFound);
+            var batches = await _repository.GetBatchesByIdsAsync(batchIds);
 
-            if (batch.WarehouseID != warehouseId)
-                throw new BusinessException(
-                    $"Batch ID {batchId} does not belong to warehouse ID {warehouseId}.",
-                    "SA007",
-                    StatusCodes.Status400BadRequest);
+            foreach (var batchId in batchIds)
+            {
+                if (!batches.TryGetValue(batchId, out var batch))
+                    throw new BusinessException($"Batch ID {batchId} not found.", "SA006", StatusCodes.Status404NotFound);
 
-            return batch;
+                if (batch.WarehouseID != warehouseId)
+                    throw new BusinessException(
+                        $"Batch ID {batchId} does not belong to warehouse ID {warehouseId}.",
+                        "SA007",
+                        StatusCodes.Status400BadRequest);
+            }
+
+            return batches;
         }
 
-        public async Task ValidateStockTakeItemLinkAsync(
+        public void ValidateStockTakeItemLink(
             long? stockTakeItemId,
+            ICollection<StockTakeItem> stockTakeItems,
             long stockTakeId,
             long batchId)
         {
             if (!stockTakeItemId.HasValue)
                 return;
 
-            var item = await _repository.GetStockTakeItemAsync(stockTakeItemId.Value);
+            var item = stockTakeItems.FirstOrDefault(i => i.StockTakeItemID == stockTakeItemId.Value);
             if (item == null)
                 throw new BusinessException($"Stock take item ID {stockTakeItemId} not found.", "SA008", StatusCodes.Status404NotFound);
 

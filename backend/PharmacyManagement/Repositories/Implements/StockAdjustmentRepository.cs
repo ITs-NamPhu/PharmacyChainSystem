@@ -71,24 +71,19 @@ namespace PharmacyManagement.Repositories.Implements
                 .FirstOrDefaultAsync(st => st.StockTakeID == stockTakeId);
         }
 
-        public async Task<StockTakeItem?> GetStockTakeItemAsync(long stockTakeItemId)
+        public async Task<Dictionary<long, Batch>> GetBatchesByIdsAsync(IEnumerable<long> batchIds)
         {
-            return await _context.StockTakeItem.FindAsync(stockTakeItemId);
-        }
+            var ids = batchIds.ToList();
+            if (ids.Count == 0)
+                return new Dictionary<long, Batch>();
 
-        public async Task<Batch?> GetBatchByIdAsync(long batchId)
-        {
-            return await _context.Batch
+            var batches = await _context.Batch
                 .Include(b => b.GoodsReceiptItem)
                     .ThenInclude(gri => gri!.Medicine)
-                .FirstOrDefaultAsync(b => b.BatchID == batchId);
-        }
+                .Where(b => ids.Contains(b.BatchID))
+                .ToListAsync();
 
-        public async Task<bool> TryAdjustStockAsync(long batchId, decimal quantity)
-        {
-            return await _context.Batch
-                .Where(b => b.BatchID == batchId && b.QuantityInStock + quantity >= 0)
-                .ExecuteUpdateAsync(s => s.SetProperty(b => b.QuantityInStock, b => b.QuantityInStock + quantity)) > 0;
+            return batches.ToDictionary(b => b.BatchID);
         }
 
         public async Task SaveChangesAsync()

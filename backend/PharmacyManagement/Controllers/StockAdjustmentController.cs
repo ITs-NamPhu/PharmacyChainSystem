@@ -18,7 +18,7 @@ namespace PharmacyManagement.Controllers
 
         [HttpPost]
         [HasPermission("STOCK_ADJUSTMENT_CREATE")]
-        public async Task<IActionResult> Create(CreateStockAdjustmentRequest request)
+        public async Task<IActionResult> StockAdjustment(CreateStockAdjustmentRequest request)
         {
             var userId = GetUserIdFromToken();
             var result = await _service.CreateAsync(request, userId);

@@ -10,9 +10,7 @@ namespace PharmacyManagement.Repositories.Interfaces
         Task AddAsync(StockAdjustment entity);
         Task<bool> HasAdjustmentAsync(long stockTakeId);
         Task<StockTake?> GetStockTakeByIdAsync(long stockTakeId);
-        Task<StockTakeItem?> GetStockTakeItemAsync(long stockTakeItemId);
-        Task<Batch?> GetBatchByIdAsync(long batchId);
-        Task<bool> TryAdjustStockAsync(long batchId, decimal quantity);
+        Task<Dictionary<long, Batch>> GetBatchesByIdsAsync(IEnumerable<long> batchIds);
         Task SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();

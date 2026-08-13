@@ -18,7 +18,7 @@ namespace PharmacyManagement.Controllers
 
         [HttpPost]
         [HasPermission("STOCKTAKE_CREATE")]
-        public async Task<IActionResult> Create(CreateStockTakeRequest request)
+        public async Task<IActionResult> StockTake(CreateStockTakeRequest request)
         {
             var userId = GetUserIdFromToken();
             var result = await _service.CreateAsync(request, userId);
@@ -27,10 +27,10 @@ namespace PharmacyManagement.Controllers
 
         [HttpPost("{id}/complete")]
         [HasPermission("STOCKTAKE_UPDATE")]
-        public async Task<IActionResult> Complete(long id, CompleteStockTakeRequest? request)
+        public async Task<IActionResult> Complete(long id)
         {
             var userId = GetUserIdFromToken();
-            var result = await _service.CompleteAsync(id, request, userId);
+            var result = await _service.CompleteAsync(id, userId);
             return Success(result, "Complete stock take successfully.");
         }
 

@@ -12,15 +12,4 @@ namespace PharmacyManagement.DTOs.StockTake
         public long BatchID { get; set; }
         public decimal ActualQuantity { get; set; }
     }
-
-    public class CompleteStockTakeRequest
-    {
-        public List<CompleteStockTakeItemRequest>? Items { get; set; }
-    }
-
-    public class CompleteStockTakeItemRequest
-    {
-        public long StockTakeItemID { get; set; }
-        public decimal ActualQuantity { get; set; }
-    }
 }
