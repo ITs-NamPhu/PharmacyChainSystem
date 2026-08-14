@@ -1,0 +1,66 @@
+.manage-container {
+    margin-left: 10px;
+
+    .title {
+        font-size: 20px;
+        font-weight: 100;
+        background-color: gainsboro;
+        border-radius: 10px;
+    }
+
+    .btn-add-new {
+        margin-top: 10px;
+    }
+
+    .table-container {
+        margin: 10px 0;
+    }
+}
+
+.modal-create-invoice,
+.modal-update-invoice {
+    .nav-tabs {
+        .nav-link {
+            font-size: 15px;
+            font-weight: 500;
+        }
+    }
+
+    .invoice-items-tab {
+        .table {
+            th {
+                font-size: 13px;
+                font-weight: 600;
+            }
+            td {
+                vertical-align: middle;
+            }
+        }
+    }
+
+    .fefo-result-section {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 12px;
+
+        h6 {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .table {
+            margin-bottom: 0;
+
+            th {
+                font-size: 12px;
+                font-weight: 600;
+                background-color: #e9ecef;
+            }
+            td {
+                font-size: 13px;
+            }
+        }
+    }
+}

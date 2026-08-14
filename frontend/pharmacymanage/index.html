@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NHATHUOC OS — Hệ thống quản lý nhà thuốc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">Rx</div>
+      <div class="brand-text">
+        <span class="brand-name">NHATHUOC</span>
+        <span class="brand-sub">OS · Quản lý nhà thuốc</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+
+      <div class="nav-group">
+        <button class="nav-group-toggle" type="button" aria-expanded="true" data-group="overview">
+          <span>Tổng quan</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-group-items" id="group-overview">
+          <div class="nav-group-items-inner">
+            <a class="nav-item is-active" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+              <span>Bảng điều khiển</span>
+            </a>
+            <a class="nav-item" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M6 9V6a6 6 0 0112 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="4" y="9" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M12 13v4M10 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Bán hàng</span>
+              <span class="badge">12</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-toggle" type="button" aria-expanded="true" data-group="ops">
+          <span>Vận hành</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-group-items" id="group-ops">
+          <div class="nav-group-items-inner">
+            <a class="nav-item" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3 7l9-4 9 4-9 4-9-4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3 7v10l9 4 9-4V7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 11v10" stroke="currentColor" stroke-width="1.8"/></svg>
+              <span>Kho thuốc</span>
+            </a>
+            <a class="nav-item" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8l1 4H7l1-4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 7h12l-1 13a2 2 0 01-2 2H9a2 2 0 01-2-2L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 12h4M10 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Đơn thuốc</span>
+            </a>
+            <a class="nav-item" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.9 3.13-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Khách hàng</span>
+            </a>
+            <a class="nav-item" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Báo cáo</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-toggle" type="button" aria-expanded="true" data-group="system">
+          <span>Hệ thống</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-group-items" id="group-system">
+          <div class="nav-group-items-inner">
+            <a class="nav-item" href="#">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 01-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 010-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.55V3a2 2 0 014 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9c.14.4.5 1.55 1.55 1z" stroke="currentColor" stroke-width="1.5"/></svg>
+              <span>Cài đặt</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="avatar">DH</div>
+      <div class="who">
+        <span class="who-name">Dược sĩ Hằng</span>
+        <span class="who-role">Quản lý ca sáng</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN COLUMN ============ -->
+  <div class="main">
+
+    <!-- ===== HEADER (20%) ===== -->
+    <header class="header">
+      <button class="sidebar-toggle" id="sidebarToggle" title="Thu gọn / Mở rộng sidebar" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <div class="header-title">
+        <h1>Chào buổi sáng, Hằng 👋</h1>
+        <p>Thứ Ba, 07/07/2026 · Ca làm việc 07:00 – 15:00</p>
+      </div>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input type="text" placeholder="Tìm thuốc, đơn hàng, khách hàng…">
+        <kbd>Ctrl K</kbd>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" title="Thông báo">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span class="dot"></span>
+        </button>
+        <button class="primary-btn">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Tạo đơn bán mới
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== CONTENT (70%) ===== -->
+    <main class="content">
+
+      <section class="stat-row">
+        <div class="stat-card">
+          <span class="stat-label">Doanh thu hôm nay</span>
+          <span class="stat-value">4.850.000₫</span>
+          <span class="stat-delta up">▲ 12.4% so với hôm qua</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Đơn hàng đã bán</span>
+          <span class="stat-value">128</span>
+          <span class="stat-delta up">▲ 8 đơn so với hôm qua</span>
+        </div>
+        <div class="stat-card warn">
+          <span class="stat-label">Thuốc sắp hết hạn</span>
+          <span class="stat-value">7</span>
+          <span class="stat-delta">Cần kiểm tra trong 30 ngày</span>
+        </div>
+        <div class="stat-card danger">
+          <span class="stat-label">Tồn kho thấp</span>
+          <span class="stat-value">15</span>
+          <span class="stat-delta">Dưới ngưỡng cảnh báo</span>
+        </div>
+      </section>
+
+      <section class="content-grid">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Tồn kho thuốc</h2>
+            <div class="panel-tabs">
+              <button class="tab is-active">Tất cả</button>
+              <button class="tab">Sắp hết</button>
+              <button class="tab">Sắp hết hạn</button>
+            </div>
+          </div>
+
+          <table class="med-table">
+            <thead>
+              <tr>
+                <th>Tên thuốc</th>
+                <th>Nhóm</th>
+                <th>Tồn kho</th>
+                <th>Hạn dùng</th>
+                <th>Giá bán</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="med-name">
+                  <span class="med-dot" style="background:#2A9D8F"></span>
+                  Paracetamol 500mg
+                </td>
+                <td>Giảm đau, hạ sốt</td>
+                <td class="mono">240 hộp</td>
+                <td class="mono">12/2027</td>
+                <td class="mono">18.000₫</td>
+                <td><span class="pill pill-ok">Còn hàng</span></td>
+              </tr>
+              <tr>
+                <td class="med-name">
+                  <span class="med-dot" style="background:#E9C46A"></span>
+                  Amoxicillin 500mg
+                </td>
+                <td>Kháng sinh</td>
+                <td class="mono">18 hộp</td>
+                <td class="mono">09/2026</td>
+                <td class="mono">32.000₫</td>
+                <td><span class="pill pill-warn">Sắp hết</span></td>
+              </tr>
+              <tr>
+                <td class="med-name">
+                  <span class="med-dot" style="background:#E76F51"></span>
+                  Vitamin C 1000mg
+                </td>
+                <td>Bổ sung vitamin</td>
+                <td class="mono">6 hộp</td>
+                <td class="mono">07/2026</td>
+                <td class="mono">45.000₫</td>
+                <td><span class="pill pill-danger">Sắp hết hạn</span></td>
+              </tr>
+              <tr>
+                <td class="med-name">
+                  <span class="med-dot" style="background:#2A9D8F"></span>
+                  Omeprazole 20mg
+                </td>
+                <td>Dạ dày, tiêu hoá</td>
+                <td class="mono">96 hộp</td>
+                <td class="mono">03/2028</td>
+                <td class="mono">58.000₫</td>
+                <td><span class="pill pill-ok">Còn hàng</span></td>
+              </tr>
+              <tr>
+                <td class="med-name">
+                  <span class="med-dot" style="background:#E9C46A"></span>
+                  Cetirizine 10mg
+                </td>
+                <td>Kháng dị ứng</td>
+                <td class="mono">22 hộp</td>
+                <td class="mono">11/2026</td>
+                <td class="mono">27.000₫</td>
+                <td><span class="pill pill-warn">Sắp hết</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel side-panel">
+          <div class="panel-head">
+            <h2>Hoạt động gần đây</h2>
+          </div>
+          <ul class="activity-list">
+            <li>
+              <span class="activity-time">08:42</span>
+              <span class="activity-text"><strong>Đơn #10231</strong> đã thanh toán — 235.000₫</span>
+            </li>
+            <li>
+              <span class="activity-time">08:20</span>
+              <span class="activity-text">Nhập kho <strong>Paracetamol 500mg</strong> +200 hộp</span>
+            </li>
+            <li>
+              <span class="activity-time">07:55</span>
+              <span class="activity-text">Khách hàng <strong>Nguyễn Văn A</strong> đổi trả đơn #10198</span>
+            </li>
+            <li>
+              <span class="activity-time">07:30</span>
+              <span class="activity-text">Cảnh báo: <strong>Vitamin C 1000mg</strong> sắp hết hạn</span>
+            </li>
+            <li>
+              <span class="activity-time">07:05</span>
+              <span class="activity-text">Bắt đầu ca làm việc — Dược sĩ Hằng</span>
+            </li>
+          </ul>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- ===== BOTTOM BAR (10%) ===== -->
+    <footer class="bottombar">
+      <div class="bottombar-inner">
+        <div class="bb-item">
+          <span class="bb-dot online"></span>
+          Hệ thống hoạt động bình thường
+        </div>
+        <div class="bb-sep"></div>
+        <div class="bb-item mono">Ca hiện tại: 07:00 – 15:00</div>
+        <div class="bb-sep"></div>
+        <div class="bb-item mono">Máy in: Sẵn sàng</div>
+        <div class="bb-spacer"></div>
+        <div class="bb-item mono">NHATHUOC OS v1.4.0</div>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.nav-group-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var group = btn.closest('.nav-group');
+      var isCollapsed = group.classList.toggle('is-collapsed');
+      btn.setAttribute('aria-expanded', String(!isCollapsed));
+    });
+  });
+
+  var sidebarToggle = document.getElementById('sidebarToggle');
+  var sidebar = document.querySelector('.sidebar');
+  var app = document.querySelector('.app');
+
+  sidebarToggle.addEventListener('click', function () {
+    sidebar.classList.toggle('is-collapsed');
+    app.classList.toggle('sidebar-collapsed');
+  });
+</script>
+
+</body>
+</html>

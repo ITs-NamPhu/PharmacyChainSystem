@@ -1,0 +1,85 @@
+hãy thiết kế dashboard theo yêu cầu sau:
+sử dụng kiến trúc Dashboard Động dựa trên Widget (Widget-Based Dynamic Dashboard) kết hợp với phân quyền RBAC (Role-Based Access Control)
+ví dụ: 
+Widget A: Thẻ Tổng doanh thu.
+Widget B: Lưới cảnh báo lô thuốc sắp hết hạn (FEFO).
+Widget C: Biểu đồ doanh thu theo chi nhánh.
+
+card Chỉ số Tổng quan - KPIs( vị trí trên cùng): 
+	Tổng doanh thu - Total Revenue (lấy từ invoice)
+	Tổng số hóa đơn - Total Orders (Đếm số lượng Invoice)
+	Doanh thu theo chi nhánh
+	Số lượng khách hàng mới
+card Cảnh báo Vận hành - Operational Alerts (Khu vực này nên thiết kế dạng danh sách (List/Grid) với các màu sắc cảnh báo (Đỏ/Vàng))
+	Cảnh báo Hạn sử dụng : Danh sách các Batch (Lô thuốc) sắp hết hạn trong vòng 3-6 tháng tới
+	Cảnh báo Tồn kho thấp: hiển thị các loại thuốc có số lượng chạm ngưỡng tối thiểu để lên kế hoạch làm GoodsReceipt (nếu trong batch quantityinstock - quantityreceipt < 10)
+	Thuốc chờ tiêu hủy: Danh sách các lô đã hết hạn (chờ làm DestroyReceipt)
+
+card Biểu đồ Phân tích - Analytics Charts (Sử dụng biểu đồ để trực quan hóa dữ liệu theo thời gian và danh mục):
+	Biểu đồ đường (Line Chart) - Xu hướng Doanh thu:
+	Biểu đồ tròn (Pie Chart) - Cơ cấu Nhóm thuốc Tỷ trọng doanh thu dựa trên MedicineCategory (Thuốc kháng sinh, Thực phẩm chức năng, Dụng cụ y tế...).
+	Biểu đồ cột (Bar Chart) - Top 5/Top 10 thuốc bán chạy nhất: Dựa trên tổng số lượng quy đổi (Base Quantity) xuất ra từ InvoiceItem
+	
+sau đây là 1 số giao diện mẫu (đang hardcode) bạn tham khảo bố cục sau (bỏ qua header và sidebar):
+giao diện admin: Mục tiêu: Giám sát tài chính tổng thể và so sánh hiệu quả giữa các chi nhánh.
++-----------------------------------------------------------------------------+
+| Sidebar        | [Header] Xin chào, Admin | Hôm nay: 28/07/2026             |
+|----------------|------------------------------------------------------------|
+| [ ] Tổng quan  | [ T.Doanh Thu: 500Tr ]  [ T.Hóa Đơn: 1,205 ]               |
+| [ ] CN & User  | [ Khách Hàng: +150   ]  [ Hàng Cận Date: 45 ]              |
+| [ ] Bán Hàng   |------------------------------------------------------------|
+| [ ] Kho Hàng   | [ BIỂU ĐỒ ĐƯỜNG: DOANH THU 7 NGÀY (TOÀN CHUỖI)           ] |
+| [ ] Danh Mục   | [ (Biểu đồ hiển thị đà tăng/giảm chung)                  ] |
+| [ ] Báo Cáo    |------------------------------------------------------------|
+|                | [ B.ĐỒ TRÒN: DT THEO CHI NHÁNH ] | [ TOP THUỐC BÁN CHẠY  ] |
+|                | [ - CN Quận 1: 40%             ] | [ 1. Panadol: 500 hộp ] |
+|                | [ - CN Quận 3: 35%             ] | [ 2. Amox: 300 hộp    ] |
+|                | [ - CN Thủ Đức: 25%            ] | [ 3. Vitamin: 200 hộp ] |
++-----------------------------------------------------------------------------+
+
+giao diện manage_supply: Mục tiêu: Không quan tâm đến tiền bán lẻ (Doanh thu), chỉ tập trung vào luồng hàng hóa, nhập xuất và đọng vốn kho.
++-----------------------------------------------------------------------------+
+| Sidebar        | [Header] Supply Manager | Hệ thống kho tổng & chi nhánh    |
+|----------------|------------------------------------------------------------|
+| [ ] Tổng quan  | [ Tổng Vốn Tồn Kho: 2 Tỷ ]  [ Đơn Nhập Chờ Duyệt: 8 ]      |
+| [ ] Nhập Hàng  | [ Phiếu Chuyển Kho: 3    ]  [ Thuốc Cận Date: 45    ]      |
+| [ ] Xuất Hàng  |------------------------------------------------------------|
+| [ ] Luân Chuyển| [ BẢNG: YÊU CẦU ĐIỀU PHỐI (STOCK TRANSFER) CẤP BÁCH      ] |
+| [ ] Tồn Kho    | [ - CN Quận 1 xin 50 Hộp Panadol từ Kho Tổng             ] |
+| [ ] NCC        | [ - CN Quận 3 xin luân chuyển 20 Vỉ Amox từ CN Quận 1    ] |
+|                |------------------------------------------------------------|
+|                | [ BẢNG: CẢNH BÁO FEFO TOÀN CHUỖI VÀ CHỜ TIÊU HỦY         ] |
+|                | [ - Lô Alpha (CN Q3) hsd 15/08/2026 -> Đề xuất: Giảm giá ] |
+|                | [ - Lô Beta (Kho tổng) đã hết hạn -> Chờ phiếu hủy       ] |
++-----------------------------------------------------------------------------+
+
+giao diện manage_branch: Mục tiêu: Quản lý sát sao tình hình tại chi nhánh của mình (nhân sự, tồn kho, bán hàng). Không thấy chi nhánh khác.
++-----------------------------------------------------------------------------+
+| Sidebar        | [Header] Quản lý: Nguyễn Văn A | Chi nhánh: Quận 1         |
+|----------------|------------------------------------------------------------|
+| [ ] Tổng quan  | [ DT Chi Nhánh: 15Tr ]  [ Hóa Đơn: 45 ]                    |
+| [ ] Bán Hàng   | [ Thuốc Hết Hàng: 5  ]  [ Cận Date: 12  ] <--(Cảnh báo)    |
+| [ ] Tồn Kho    |------------------------------------------------------------|
+| [ ] Nhân Viên  | [ BIỂU ĐỒ ĐƯỜNG: DOANH THU 7 NGÀY CỦA CHI NHÁNH QUẬN 1   ] |
+| [ ] Báo Cáo    |------------------------------------------------------------|
+|                | [ TIẾN ĐỘ NHÂN VIÊN TRONG CA ] | [ LƯỚI FEFO & HẾT HÀNG  ] |
+|                | [ - Thu ngân 1: 8Tr (20 HĐ)  ] | [ - Lô X (10hộp) - 30/08] |
+|                | [ - Thu ngân 2: 7Tr (25 HĐ)  ] | [ - Amox: Cần nhập thêm ] |
++-----------------------------------------------------------------------------+
+
+giao diện User_Sales: Mục tiêu: Giao diện tối giản nhất. Tập trung vào ca làm việc hiện tại và phím tắt mở nhanh màn hình bán hàng (POS).
++-----------------------------------------------------------------------------+
+| Sidebar        | [Header] Thu ngân: Trần Thị B | Ca Sáng - CN Quận 1        |
+|----------------|------------------------------------------------------------|
+| [ ] Tổng quan  | [ DOANH THU CA CỦA TÔI: 5Tr ]  [ HÓA ĐƠN ĐÃ LẬP: 15 ]      |
+| [ ] Lập HĐ (*) |------------------------------------------------------------|
+| [ ] Khách Hàng | [  NÚT BẤM TO: MỞ MÀN HÌNH BÁN HÀNG (POS - F2)           ] |
+|                |------------------------------------------------------------|
+|                | [ THÔNG BÁO / CHƯƠNG TRÌNH KHUYẾN MÃI HÔM NAY            ] |
+|                | [ LƯU Ý: Mua 2 hộp Canxi tặng 1 vỉ Vitamin (Chạy đến 30/7] |
+|                | [ LƯU Ý: Khách VIP (Điểm > 1000) được giảm 5% trên bill  ] |
+|                |------------------------------------------------------------|
+|                | [ CẢNH BÁO TẠI QUẦY                                      ] |
+|                | [ - Panadol đỏ hiện chỉ còn 2 hộp (Báo quản lý nhập thêm)] |
++-----------------------------------------------------------------------------+
+

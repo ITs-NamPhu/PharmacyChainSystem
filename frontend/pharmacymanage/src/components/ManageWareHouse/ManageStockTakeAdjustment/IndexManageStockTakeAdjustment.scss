@@ -1,0 +1,25 @@
+.manage-stockTake-adjustment-container {
+    margin-left: 10px;
+
+    .btn-add-new {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 10px 0;
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 100;
+        background-color: gainsboro;
+        border-radius: 10px;
+    }
+
+    .table-stockTake-adjustment-container {
+        margin: 10px 0;
+
+        .badge {
+            margin-right: 4px;
+        }
+    }
+}
