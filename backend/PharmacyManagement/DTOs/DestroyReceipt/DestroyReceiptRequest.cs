@@ -3,6 +3,7 @@ namespace PharmacyManagement.DTOs.DestroyReceipt
     public class CreateDestroyReceiptRequest
     {
         public long WarehouseID { get; set; }
+        public long StockTakeID { get; set; }
         public string? Note { get; set; }
         public List<CreateDestroyReceiptItemRequest> Items { get; set; } = new();
     }

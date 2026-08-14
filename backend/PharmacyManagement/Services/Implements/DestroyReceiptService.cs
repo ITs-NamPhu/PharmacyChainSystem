@@ -27,6 +27,7 @@ namespace PharmacyManagement.Services.Implements
                 throw new BusinessException("Destroy receipt must contain at least one item.", "DR010", StatusCodes.Status400BadRequest);
 
             await _businessValidator.ValidateWarehouseExistsAsync(request.WarehouseID);
+            await _businessValidator.ValidateStockTakeCanDestroyAsync(request.StockTakeID, request.WarehouseID);
 
             var batchIds = request.Items.Select(i => i.BatchID).ToList();
             var batches = await _businessValidator.ValidateBatchesInWarehouseAsync(batchIds, request.WarehouseID);
@@ -41,6 +42,7 @@ namespace PharmacyManagement.Services.Implements
 
             _businessValidator.ValidateStockTakeItemLinksAsync(
                 request.Items.Select(i => (i.StockTakeItemID, i.BatchID)),
+                request.StockTakeID,
                 stockTakeItems);
 
             foreach (var item in request.Items)

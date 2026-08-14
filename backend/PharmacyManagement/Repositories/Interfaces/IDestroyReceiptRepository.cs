@@ -9,6 +9,8 @@ namespace PharmacyManagement.Repositories.Interfaces
         Task<int> CountAsync(long warehouseId);
         Task AddAsync(DestroyReceipt entity);
         Task<WareHouse?> GetWarehouseByIdAsync(long warehouseId);
+        Task<bool> HasDestroyReceiptAsync(long stockTakeId);
+        Task<StockTake?> GetStockTakeByIdAsync(long stockTakeId);
         Task<Dictionary<long, Batch>> GetBatchesByIdsAsync(IEnumerable<long> batchIds);
         Task<Dictionary<long, StockTakeItem>> GetStockTakeItemsByIdsAsync(IEnumerable<long> stockTakeItemIds);
         Task SaveChangesAsync();

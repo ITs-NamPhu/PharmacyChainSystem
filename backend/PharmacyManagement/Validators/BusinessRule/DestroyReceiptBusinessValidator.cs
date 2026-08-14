@@ -44,8 +44,42 @@ namespace PharmacyManagement.Validators.BusinessRule
             return batches;
         }
 
+        public async Task<StockTake> ValidateStockTakeCanDestroyAsync(long stockTakeId, long warehouseId)
+        {
+            var stockTake = await _repository.GetStockTakeByIdAsync(stockTakeId);
+            if (stockTake == null)
+                throw new BusinessException("Stock take not found.", "DR011", StatusCodes.Status404NotFound);
+
+            if (stockTake.Status != StockTakeStatus.Completed)
+                throw new BusinessException(
+                    "Stock take must be completed before creating a destroy receipt.",
+                    "DR012",
+                    StatusCodes.Status400BadRequest);
+
+            if (stockTake.IsBalance != StockTakeResult.Difference)
+                throw new BusinessException(
+                    "Stock take is balanced. No destroy is required.",
+                    "DR013",
+                    StatusCodes.Status400BadRequest);
+
+            if (stockTake.WarehouseID != warehouseId)
+                throw new BusinessException(
+                    $"Stock take ID {stockTakeId} does not belong to warehouse ID {warehouseId}.",
+                    "DR014",
+                    StatusCodes.Status400BadRequest);
+
+            if (await _repository.HasDestroyReceiptAsync(stockTakeId))
+                throw new BusinessException(
+                    "Stock take already has a destroy receipt.",
+                    "DR015",
+                    StatusCodes.Status400BadRequest);
+
+            return stockTake;
+        }
+
         public void ValidateStockTakeItemLinksAsync(
             IEnumerable<(long? StockTakeItemID, long BatchID)> items,
+            long stockTakeId,
             Dictionary<long, StockTakeItem> stockTakeItems)
         {
             foreach (var (stockTakeItemId, batchId) in items)
@@ -54,7 +88,13 @@ namespace PharmacyManagement.Validators.BusinessRule
                     continue;
 
                 if (!stockTakeItems.TryGetValue(stockTakeItemId.Value, out var item))
-                    throw new BusinessException($"Stock take item ID {stockTakeItemId} not found.", "DR004", StatusCodes.Status404NotFound);
+                    throw new BusinessException($"Stock take item ID {stockTakeItemId} not found.", "DR016", StatusCodes.Status404NotFound);
+
+                if (item.StockTakeID != stockTakeId)
+                    throw new BusinessException(
+                        "Stock take item does not belong to the given stock take.",
+                        "DR017",
+                        StatusCodes.Status400BadRequest);
 
                 if (item.BatchID != batchId)
                     throw new BusinessException(
