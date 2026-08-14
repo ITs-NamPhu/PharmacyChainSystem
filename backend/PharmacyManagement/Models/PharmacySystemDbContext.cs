@@ -118,6 +118,22 @@ namespace PharmacyManagement.Models
                     .HasForeignKey(e => e.RoleID);
             });
 
+            modelBuilder.Entity<StockAdjustmentItem>(entity =>
+            {
+                entity.HasOne(e => e.StockTakeItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockTakeItemID)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<DestroyReceiptItem>(entity =>
+            {
+                entity.HasOne(e => e.StockTakeItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockTakeItemID)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
         }
     }
 }

@@ -177,6 +177,9 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IUnitConversionRepository, UnitConversionRepository>();
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IGoodsReceiptRepository, GoodsReceiptRepository>();
+            builder.Services.AddScoped<IStockTakeRepository, StockTakeRepository>();
+            builder.Services.AddScoped<IStockAdjustmentRepository, StockAdjustmentRepository>();
+            builder.Services.AddScoped<IDestroyReceiptRepository, DestroyReceiptRepository>();
 
             // Service
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -198,6 +201,9 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IGoodsReceiptService, GoodsReceiptService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();
+            builder.Services.AddScoped<IStockTakeService, StockTakeService>();
+            builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
+            builder.Services.AddScoped<IDestroyReceiptService, DestroyReceiptService>();
 
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
@@ -226,6 +232,9 @@ namespace PharmacyManagement
             builder.Services.AddScoped<InvoiceItemBusinessValidator>();
             builder.Services.AddScoped<GoodsReceiptBusinessValidator>();
             builder.Services.AddScoped<GoodsReceiptItemUpdateHandler>();
+            builder.Services.AddScoped<StockTakeBusinessValidator>();
+            builder.Services.AddScoped<StockAdjustmentBusinessValidator>();
+            builder.Services.AddScoped<DestroyReceiptBusinessValidator>();
 
             builder.Services.AddControllers();
 

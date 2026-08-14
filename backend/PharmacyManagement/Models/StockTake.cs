@@ -13,10 +13,21 @@ namespace PharmacyManagement.Models
         [StringLength(255)]
         public String Note { get; set; }
         public StockTakeResult IsBalance { get; set; }
+        public StockTakeStatus Status { get; set; }
+        public bool IsAdjusted { get; set; }
+        public long? ApprovedBy { get; set; }
+        public DateTime? ApprovedAt { get; set; }
 
         public WareHouse? WareHouse { get; set; }
         public User? User { get; set; }
 		public ICollection<StockTakeItem>? StockTakeItem { get;set; }
+    }
+
+    public enum StockTakeStatus
+    {
+        Draft,
+        Completed,
+        Cancelled
     }
 
     public enum StockTakeResult

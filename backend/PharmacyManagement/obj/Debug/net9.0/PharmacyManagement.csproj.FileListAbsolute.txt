@@ -297,3 +297,4 @@ E:\Supply_pharmacy\backend\PharmacyManagement\obj\Debug\net9.0\refint\PharmacyMa
 E:\Supply_pharmacy\backend\PharmacyManagement\obj\Debug\net9.0\PharmacyManagement.pdb
 E:\Supply_pharmacy\backend\PharmacyManagement\obj\Debug\net9.0\PharmacyManagement.genruntimeconfig.cache
 E:\Supply_pharmacy\backend\PharmacyManagement\obj\Debug\net9.0\ref\PharmacyManagement.dll
+E:\Supply_pharmacy\backend\PharmacyManagement\obj\Debug\net9.0\PharmacyManagement.sourcelink.json

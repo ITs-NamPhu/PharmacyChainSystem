@@ -1,0 +1,103 @@
+.login-container {
+    .header {
+        height: 45px;
+        text-align: right;
+        //border: 1px solid red;
+        //padding: 0 30px;
+        display: flex;
+        justify-content: right;
+        align-items: center;
+        margin-right: 80px;
+        gap: 15px;
+
+        button {
+            //margin-left: 14px;
+            padding: 5px 5px;
+            border-radius: 6px;
+            background-color: white;
+            border: 1px solid;
+
+            &:hover {
+                background-color: bisque;
+            }
+        }
+    }
+
+    .title {
+        font-size: 25px;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .welcome {
+        font-size: 20px;
+        padding: 10px 0;
+        text-align: center;
+    }
+
+    .content-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        button {
+            border: none;
+            margin: 20px 0;
+            height: 50px;
+            width: 100%;
+            border-radius: 5px;
+            background-color: cadetblue;
+            color: whitesmoke;
+            // display: flex;
+            // justify-content: center;
+            // align-items: center;
+
+            // span {
+            //     margin-right: 10px;
+            // }
+
+            &:disabled {
+                background: #dddddd;
+                color: #afafaf;
+                cursor: no-drop;
+            }
+        }
+
+        .div-password {
+            position: relative;
+
+            .showEye {
+                position: absolute;
+                // top: 30px;
+                // left: calc(100% - 10%);
+                font-size: 20px;
+                top: 20%;
+                right: 10px; // cách cạnh phải 10px
+                transform: translateY(-50%);
+                cursor: pointer;
+            }
+
+            .back {
+                background-color: aquamarine;
+                animation: blinkblink 1s infinite;
+                //font-size: 10px;
+                cursor: pointer;
+
+            }
+
+            @keyframes blinkblink {
+
+                50% {
+                    background-color: rgb(219, 146, 146);
+                    // font-size: 10px;
+                }
+
+
+                100% {
+                    background-color: aquamarine;
+                    //font-size: 10px;
+                }
+            }
+        }
+    }
+}

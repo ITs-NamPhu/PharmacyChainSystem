@@ -235,6 +235,12 @@ namespace PharmacyManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("DestroyReceiptID"));
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("ApprovedBy")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -275,11 +281,23 @@ namespace PharmacyManagement.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long?>("StockTakeItemID")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("DestroyReceiptItemID");
 
                     b.HasIndex("BatchID");
 
                     b.HasIndex("DestroyReceiptID");
+
+                    b.HasIndex("StockTakeItemID");
 
                     b.ToTable("DestroyReceiptItem", (string)null);
                 });
@@ -923,6 +941,12 @@ namespace PharmacyManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("StockAdjustmentID"));
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("ApprovedBy")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -965,7 +989,14 @@ namespace PharmacyManagement.Migrations
                     b.Property<long>("BatchID")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<long>("StockAdjustmentID")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("StockTakeItemID")
                         .HasColumnType("bigint");
 
                     b.HasKey("StockAdjustmentItemID");
@@ -973,6 +1004,8 @@ namespace PharmacyManagement.Migrations
                     b.HasIndex("BatchID");
 
                     b.HasIndex("StockAdjustmentID");
+
+                    b.HasIndex("StockTakeItemID");
 
                     b.ToTable("StockAdjustmentItem", (string)null);
                 });
@@ -985,8 +1018,17 @@ namespace PharmacyManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("StockTakeID"));
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("ApprovedBy")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAdjusted")
+                        .HasColumnType("bit");
 
                     b.Property<int>("IsBalance")
                         .HasColumnType("int");
@@ -995,6 +1037,9 @@ namespace PharmacyManagement.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<long>("UserID")
                         .HasColumnType("bigint");
@@ -1330,9 +1375,16 @@ namespace PharmacyManagement.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PharmacyManagement.Models.StockTakeItem", "StockTakeItem")
+                        .WithMany()
+                        .HasForeignKey("StockTakeItemID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Batch");
 
                     b.Navigation("DestroyReceipt");
+
+                    b.Navigation("StockTakeItem");
                 });
 
             modelBuilder.Entity("PharmacyManagement.Models.GoodsReceipt", b =>
@@ -1679,9 +1731,16 @@ namespace PharmacyManagement.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PharmacyManagement.Models.StockTakeItem", "StockTakeItem")
+                        .WithMany()
+                        .HasForeignKey("StockTakeItemID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Batch");
 
                     b.Navigation("StockAdjustment");
+
+                    b.Navigation("StockTakeItem");
                 });
 
             modelBuilder.Entity("PharmacyManagement.Models.StockTake", b =>

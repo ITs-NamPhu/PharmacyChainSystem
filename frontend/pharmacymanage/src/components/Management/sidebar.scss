@@ -1,0 +1,208 @@
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px 28px 8px;
+
+    .brand-mark {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-sm);
+        background: linear-gradient(155deg, var(--primary), #1D7A6E);
+        color: #fff;
+        font-weight: 800;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+    }
+
+    .brand-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+    }
+
+    .brand-name {
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: 0.5px;
+        color: #fff;
+    }
+
+    .brand-sub {
+        font-size: 11.5px;
+        color: var(--sidebar-text-dim);
+    }
+}
+
+.nav {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .nav-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .nav-group-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--sidebar-text-dim);
+        padding: 12px 12px 8px;
+        border-radius: var(--radius-sm);
+        transition: color 0.15s ease;
+
+        &:hover {
+            color: #fff;
+        }
+
+        .chevron {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+    }
+
+    .nav-group:first-child .nav-group-toggle {
+        padding-top: 4px;
+    }
+
+    .nav-group.is-collapsed {
+        .nav-group-toggle .chevron {
+            transform: rotate(-90deg);
+        }
+
+        .nav-group-items {
+            grid-template-rows: 0fr;
+        }
+    }
+
+    .nav-group-items {
+        display: grid;
+        grid-template-rows: 1fr;
+        transition: grid-template-rows 0.22s ease;
+
+        .nav-group-items-inner {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--sidebar-text);
+        position: relative;
+        transition: background 0.15s ease, color 0.15s ease;
+
+        &:hover {
+            background: var(--sidebar-bg-soft);
+            color: #fff;
+        }
+
+        &.is-active {
+            background: var(--sidebar-active);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 19px;
+            height: 19px;
+            flex-shrink: 0;
+            opacity: 0.92;
+        }
+
+        .badge {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.16);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+        }
+
+        &.is-active .badge {
+            background: rgba(255, 255, 255, 0.28);
+        }
+    }
+}
+
+.nav.is-collapsed {
+
+    .nav-group-toggle span,
+    .nav-item span:not(.badge) {
+        display: none;
+    }
+
+    .nav-item {
+        justify-content: center;
+        padding: 10px 0;
+    }
+}
+
+.sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 10px 4px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+    .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--primary-soft);
+        color: var(--primary-dark);
+        font-weight: 700;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .who {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+    }
+
+    .who-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .who-role {
+        font-size: 11.5px;
+        color: var(--sidebar-text-dim);
+    }
+}
