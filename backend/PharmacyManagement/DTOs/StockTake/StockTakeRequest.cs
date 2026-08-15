@@ -11,5 +11,7 @@ namespace PharmacyManagement.DTOs.StockTake
     {
         public long BatchID { get; set; }
         public decimal ActualQuantity { get; set; }
+        public bool IsAdjust { get; set; }
+        public bool IsDestroy { get; set; }
     }
 }

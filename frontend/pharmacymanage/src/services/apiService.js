@@ -488,6 +488,25 @@ const CreateStockAdjustment = (stockTakeID, note, items) => {
 const ApproveStockAdjustment = (stockAdjustmentID) => {
     return instance.post(`api/StockAdjustment/${stockAdjustmentID}/approve`)
 }
+const getAllDestroyReceiptPag = (page, count, warehouseId) => {
+    return instance.get(`api/DestroyReceipt/GetAll`, {
+        params: { page: page, count: count, warehouseId: warehouseId || 0 }
+    })
+}
+const GetDestroyReceiptById = (destroyReceiptID) => {
+    return instance.get(`api/DestroyReceipt/${destroyReceiptID}`)
+}
+const CreateDestroyReceipt = (warehouseID, stockTakeID, note, items) => {
+    return instance.post(`api/DestroyReceipt`, {
+        WarehouseID: warehouseID,
+        StockTakeID: stockTakeID,
+        Note: note,
+        Items: items
+    })
+}
+const ApproveDestroyReceipt = (destroyReceiptID) => {
+    return instance.post(`api/DestroyReceipt/${destroyReceiptID}/approve`)
+}
 
 export {
     postLogin, Logout, postRefreshToken,
@@ -528,5 +547,7 @@ export {
 
     getAllStockTakePag, GetStockTakeById, CreateStockTake, CompleteStockTake, CancelStockTake, ApproveStockTake,
 
-    getAllStockAdjustmentPag, GetStockAdjustmentById, CreateStockAdjustment, ApproveStockAdjustment
+    getAllStockAdjustmentPag, GetStockAdjustmentById, CreateStockAdjustment, ApproveStockAdjustment,
+
+    getAllDestroyReceiptPag, GetDestroyReceiptById, CreateDestroyReceipt, ApproveDestroyReceipt
 };

@@ -12,6 +12,7 @@ export const ROUTE_PERMISSIONS = {
   managewarehouse_medicine: ['admin', 'manage_supply', 'manage_branch', 'user_sales', 'user_warehouse'],
   managestocktake: ['admin', 'manage_supply'],
   managestockadjustment: ['admin', 'manage_supply'],
+  managedestroy: ['admin', 'manage_supply'],
   config: ['admin', 'manage_supply', 'manage_branch', 'user_sales', 'user_warehouse'],
 }
 

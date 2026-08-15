@@ -43,6 +43,9 @@ namespace PharmacyManagement.Services.Implements
                 ? StockTakeResult.Balanced
                 : StockTakeResult.Difference;
 
+            stockTake.IsAdjust = stockTake.StockTakeItem.Any(i => i.IsAdjust);
+            stockTake.IsDestroy = stockTake.StockTakeItem.Any(i => i.IsDestroy);
+
 
 
             await _repository.AddAsync(stockTake);

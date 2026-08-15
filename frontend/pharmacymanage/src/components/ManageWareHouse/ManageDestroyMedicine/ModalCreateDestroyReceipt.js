@@ -4,12 +4,12 @@ import Modal from 'react-bootstrap/Modal';
 import { toast } from 'react-toastify';
 
 import {
-    CreateStockAdjustment,
+    CreateDestroyReceipt,
     getAllStockTakePag,
     GetStockTakeById
 } from '../../../services/apiService';
 
-const ModalCreateStockAdjustment = (props) => {
+const ModalCreateDestroyReceipt = (props) => {
     const { show, setShow, warehouseID } = props;
 
     const [stockTakeID, setStockTakeID] = useState('');
@@ -47,7 +47,7 @@ const ModalCreateStockAdjustment = (props) => {
 
         const eligible = all.filter(st =>
             st.status === 'Completed' &&
-            st.isAdjust
+            st.isDestroy
         );
 
         setListStockTake(eligible);
@@ -69,7 +69,7 @@ const ModalCreateStockAdjustment = (props) => {
             const detail = res.dt;
             setItems(
                 (detail.items || [])
-                    .filter(item => item.isAdjust)
+                    .filter(item => item.isDestroy)
                     .map(item => ({
                         stockTakeItemID: item.stockTakeItemID,
                         batchID: item.batchID,
@@ -77,7 +77,7 @@ const ModalCreateStockAdjustment = (props) => {
                         unitName: item.unitName,
                         systemQuantity: item.systemQuantity,
                         actualQuantity: item.actualQuantity,
-                        adjustQuantity: item.differenceQuantity,
+                        quantity: item.differenceQuantity === 0 ? 0 : Math.abs(item.differenceQuantity),
                         reasonCode: ''
                     }))
             );
@@ -100,20 +100,20 @@ const ModalCreateStockAdjustment = (props) => {
         setItems(updated);
     };
 
-    const handleSubmitStockAdjustment = async () => {
+    const handleSubmitDestroyReceipt = async () => {
         if (!stockTakeID || stockTakeID === '') {
-            toast.error('Vui lòng chọn phiếu kiểm kê để điều chỉnh');
+            toast.error('Vui lòng chọn phiếu kiểm kê để tiêu hủy');
             return;
         }
         if (items.length === 0) {
-            toast.error('Phiếu kiểm kê không có chênh lệch nào cần điều chỉnh');
+            toast.error('Phiếu kiểm kê không có lô hàng nào cần tiêu hủy');
             return;
         }
 
         for (let i = 0; i < items.length; i++) {
-            const qty = items[i].adjustQuantity;
-            if (qty === '' || qty == null || isNaN(+qty)) {
-                toast.error(`Số lượng điều chỉnh không hợp lệ tại dòng ${i + 1}`);
+            const qty = items[i].quantity;
+            if (qty === '' || qty == null || isNaN(+qty) || +qty <= 0) {
+                toast.error(`Số lượng tiêu hủy phải > 0 tại dòng ${i + 1}`);
                 return;
             }
         }
@@ -121,25 +121,25 @@ const ModalCreateStockAdjustment = (props) => {
         const submitItems = items.map(item => ({
             BatchID: +item.batchID,
             StockTakeItemID: +item.stockTakeItemID,
-            AdjustQuantity: +item.adjustQuantity,
+            Quantity: +item.quantity,
             ReasonCode: item.reasonCode || null
         }));
 
-        let res = await CreateStockAdjustment(+stockTakeID, note, submitItems);
+        let res = await CreateDestroyReceipt(+warehouseID, +stockTakeID, note, submitItems);
         if (!res || res.ec !== 0) {
-            toast.error(res?.em || 'Tạo phiếu điều chỉnh tồn kho thất bại');
+            toast.error(res?.em || 'Tạo phiếu tiêu hủy thất bại');
             return;
         }
 
-        toast.success(res.em || 'Tạo phiếu điều chỉnh tồn kho thành công');
+        toast.success(res.em || 'Tạo phiếu tiêu hủy thành công');
         handleClose();
-        await props.fetchStockAdjustment(1);
+        await props.fetchDestroyReceipt(1);
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size="xl" className='modal-create-stock-adjustment'>
+        <Modal show={show} onHide={handleClose} size="xl" className='modal-create-destroy-receipt'>
             <Modal.Header closeButton>
-                <Modal.Title>Tạo phiếu điều chỉnh tồn kho</Modal.Title>
+                <Modal.Title>Tạo phiếu tiêu hủy</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <form className='row g-3 mb-3'>
@@ -163,7 +163,7 @@ const ModalCreateStockAdjustment = (props) => {
                         </select>
                         {listStockTake && listStockTake.length === 0 && !loading &&
                             <small className="text-muted">
-                                Không có phiếu kiểm kê nào hoàn thành và lệch tồn kho chưa điều chỉnh
+                                Không có phiếu kiểm kê nào hoàn thành có lô hàng cần tiêu hủy
                             </small>
                         }
                     </div>
@@ -180,7 +180,7 @@ const ModalCreateStockAdjustment = (props) => {
                 </form>
 
                 <div className='d-flex justify-content-between align-items-center mb-2'>
-                    <label className='fw-bold mb-0'>Danh sách lô hàng chênh lệch (SL điều chỉnh lấy từ chênh lệch kiểm kê)</label>
+                    <label className='fw-bold mb-0'>Danh sách lô hàng cần tiêu hủy</label>
                     {loading && <span className="text-muted small">Đang tải...</span>}
                 </div>
 
@@ -191,7 +191,7 @@ const ModalCreateStockAdjustment = (props) => {
                             <th style={{ width: '10%' }}>Đơn vị</th>
                             <th style={{ width: '13%' }}>SL hệ thống</th>
                             <th style={{ width: '13%' }}>SL thực tế</th>
-                            <th style={{ width: '16%' }}>SL điều chỉnh</th>
+                            <th style={{ width: '16%' }}>SL tiêu hủy</th>
                             <th style={{ width: '18%' }}>Lý do</th>
                         </tr>
                     </thead>
@@ -199,7 +199,7 @@ const ModalCreateStockAdjustment = (props) => {
                         {items.length === 0 && !loading &&
                             <tr>
                                 <td colSpan={6} className="text-center text-muted">
-                                    {stockTakeID ? 'Phiếu kiểm kê không có chênh lệch' : 'Chọn phiếu kiểm kê để hiển thị'}
+                                    {stockTakeID ? 'Phiếu kiểm kê không có lô hàng nào cần tiêu hủy' : 'Chọn phiếu kiểm kê để hiển thị'}
                                 </td>
                             </tr>
                         }
@@ -214,10 +214,11 @@ const ModalCreateStockAdjustment = (props) => {
                                     <input
                                         type="number"
                                         className="form-control form-control-sm"
-                                        value={item.adjustQuantity}
-                                        placeholder="SL điều chỉnh"
+                                        value={item.quantity}
+                                        min="0"
+                                        placeholder="SL tiêu hủy"
                                         onChange={(event) =>
-                                            handleChangeItem(index, 'adjustQuantity', event.target.value)
+                                            handleChangeItem(index, 'quantity', event.target.value)
                                         }
                                     />
                                 </td>
@@ -226,7 +227,7 @@ const ModalCreateStockAdjustment = (props) => {
                                         type="text"
                                         className="form-control form-control-sm"
                                         value={item.reasonCode}
-                                        placeholder="Lý do điều chỉnh"
+                                        placeholder="Lý do tiêu hủy"
                                         onChange={(event) =>
                                             handleChangeItem(index, 'reasonCode', event.target.value)
                                         }
@@ -241,7 +242,7 @@ const ModalCreateStockAdjustment = (props) => {
                 <Button variant="secondary" onClick={handleClose}>
                     Đóng
                 </Button>
-                <Button variant="primary" onClick={() => handleSubmitStockAdjustment()} disabled={loading}>
+                <Button variant="primary" onClick={() => handleSubmitDestroyReceipt()} disabled={loading}>
                     Lưu
                 </Button>
             </Modal.Footer>
@@ -249,4 +250,4 @@ const ModalCreateStockAdjustment = (props) => {
     );
 };
 
-export default ModalCreateStockAdjustment;
+export default ModalCreateDestroyReceipt;

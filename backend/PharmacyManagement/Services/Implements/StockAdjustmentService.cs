@@ -62,7 +62,6 @@ namespace PharmacyManagement.Services.Implements
                     batch.QuantityInStock += item.AdjustQuantity;
                 }
 
-                stockTake.IsAdjusted = true;
                 await _repository.SaveChangesAsync();
                 await _repository.CommitTransactionAsync();
             }
