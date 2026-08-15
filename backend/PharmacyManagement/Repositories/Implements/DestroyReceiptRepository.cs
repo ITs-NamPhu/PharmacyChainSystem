@@ -20,6 +20,7 @@ namespace PharmacyManagement.Repositories.Implements
             return await _context.DestroyReceipt
                 .Include(dr => dr.WareHouse)
                 .Include(dr => dr.User)
+                .Include(dr => dr.StockTake)
                 .Include(dr => dr.DestroyReceiptItem)
                     .ThenInclude(item => item.Batch)
                         .ThenInclude(batch => batch!.GoodsReceiptItem)
@@ -61,6 +62,18 @@ namespace PharmacyManagement.Repositories.Implements
         public async Task<WareHouse?> GetWarehouseByIdAsync(long warehouseId)
         {
             return await _context.WareHouse.FindAsync(warehouseId);
+        }
+
+        public async Task<bool> HasDestroyReceiptAsync(long stockTakeId)
+        {
+            return await _context.DestroyReceipt.AnyAsync(dr => dr.StockTakeID == stockTakeId);
+        }
+
+        public async Task<StockTake?> GetStockTakeByIdAsync(long stockTakeId)
+        {
+            return await _context.StockTake
+                .Include(st => st.StockTakeItem)
+                .FirstOrDefaultAsync(st => st.StockTakeID == stockTakeId);
         }
 
         public async Task<Dictionary<long, Batch>> GetBatchesByIdsAsync(IEnumerable<long> batchIds)

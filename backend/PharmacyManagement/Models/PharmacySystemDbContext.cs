@@ -126,6 +126,14 @@ namespace PharmacyManagement.Models
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<DestroyReceipt>(entity =>
+            {
+                entity.HasOne(e => e.StockTake)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockTakeID)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
             modelBuilder.Entity<DestroyReceiptItem>(entity =>
             {
                 entity.HasOne(e => e.StockTakeItem)

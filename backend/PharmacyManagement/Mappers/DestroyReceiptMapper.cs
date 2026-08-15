@@ -11,6 +11,7 @@ namespace PharmacyManagement.Mappers
             {
                 WarehouseID = request.WarehouseID,
                 UserID = userId,
+                StockTakeID = request.StockTakeID,
                 Note = request.Note ?? string.Empty,
                 CreatedAt = DateTime.Now
             };
@@ -41,6 +42,7 @@ namespace PharmacyManagement.Mappers
                 WarehouseName = entity.WareHouse?.WarehouseName ?? string.Empty,
                 UserID = entity.UserID,
                 UserName = entity.User?.FullName ?? string.Empty,
+                StockTakeID = entity.StockTakeID,
                 Note = entity.Note,
                 CreatedAt = entity.CreatedAt,
                 ApprovedBy = entity.ApprovedBy,
@@ -58,6 +60,7 @@ namespace PharmacyManagement.Mappers
                 WarehouseName = entity.WareHouse?.WarehouseName ?? string.Empty,
                 UserID = entity.UserID,
                 UserName = entity.User?.FullName ?? string.Empty,
+                StockTakeID = entity.StockTakeID,
                 Note = entity.Note,
                 CreatedAt = entity.CreatedAt,
                 ApprovedBy = entity.ApprovedBy,

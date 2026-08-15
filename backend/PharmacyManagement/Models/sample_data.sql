@@ -964,11 +964,13 @@ WHILE @i <= 50
 BEGIN
     DECLARE @dr_id BIGINT
     DECLARE @wh_dr INT = ((@i - 1) % 4) + 1
+    DECLARE @st_ref_dr BIGINT = @i  -- 1-to-1 voi StockTake
 
-    INSERT INTO [DestroyReceipt] ([WarehouseID], [UserID], [Note], [CreatedAt])
+    INSERT INTO [DestroyReceipt] ([WarehouseID], [UserID], [StockTakeID], [Note], [CreatedAt])
     VALUES (
         @wh_dr,
         CASE @wh_dr WHEN 1 THEN 11 WHEN 2 THEN 12 WHEN 3 THEN 13 WHEN 4 THEN 14 END,
+        @st_ref_dr,
         N'Phieu huy thuoc so ' + CAST(@i AS NVARCHAR(10)),
         DATEADD(DAY, ((@i - 1) % 365), '2024-06-01')
     )
