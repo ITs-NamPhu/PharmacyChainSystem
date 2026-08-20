@@ -2,23 +2,23 @@ import { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 
-import { GetStockTakeById } from '../../../services/apiService';
+import { GetDestroyReceiptById } from '../../../services/apiService';
 
-const ModalViewStockTake = (props) => {
+const ModalViewDestroyReceipt = (props) => {
     const { show, setShow, dataView } = props;
 
     const [detail, setDetail] = useState(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (show && dataView && dataView.stockTakeID) {
-            fetchDetail(dataView.stockTakeID);
+        if (show && dataView && dataView.destroyReceiptID) {
+            fetchDetail(dataView.destroyReceiptID);
         }
     }, [show, dataView]);
 
     const fetchDetail = async (id) => {
         setLoading(true);
-        let res = await GetStockTakeById(id);
+        let res = await GetDestroyReceiptById(id);
         if (res && res.ec === 0 && res.dt) {
             setDetail(res.dt);
         } else {
@@ -38,29 +38,15 @@ const ModalViewStockTake = (props) => {
         return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN");
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "Draft":
-                return <span className="badge bg-warning text-dark">Nháp</span>;
-            case "Completed":
-                return <span className="badge bg-success">Hoàn thành</span>;
-            case "Cancelled":
-                return <span className="badge bg-danger">Đã hủy</span>;
-            default:
-                return <span className="badge bg-secondary">{status}</span>;
-        }
-    };
-
-    const getBalanceBadge = (isBalance) => {
-        if (isBalance === "Balanced")
-            return <span className="badge bg-success">Khớp</span>;
-        return <span className="badge bg-danger">Lệch</span>;
+    const formatMoney = (value) => {
+        if (value == null || isNaN(+value)) return "—";
+        return (+value).toLocaleString("vi-VN", { style: "currency", currency: "VND" });
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size="xl" className='modal-view-stock-take'>
+        <Modal show={show} onHide={handleClose} size="xl" className='modal-view-destroy-receipt'>
             <Modal.Header closeButton>
-                <Modal.Title>Chi tiết phiếu kiểm kê #{dataView.stockTakeID}</Modal.Title>
+                <Modal.Title>Chi tiết phiếu tiêu hủy #{dataView.destroyReceiptID}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {loading && <div className="text-center text-muted">Đang tải...</div>}
@@ -69,7 +55,11 @@ const ModalViewStockTake = (props) => {
                     <>
                         <div className="row g-3 mb-3">
                             <div className="col-md-6">
-                                <label className="fw-bold">Kho kiểm kê</label>
+                                <label className="fw-bold">Phiếu kiểm kê</label>
+                                <div>#{detail.stockTakeID}</div>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="fw-bold">Kho</label>
                                 <div>{detail.warehouseName}</div>
                             </div>
                             <div className="col-md-6">
@@ -79,18 +69,6 @@ const ModalViewStockTake = (props) => {
                             <div className="col-md-6">
                                 <label className="fw-bold">Ngày tạo</label>
                                 <div>{formatDate(detail.createdAt)}</div>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="fw-bold">Trạng thái</label>
-                                <div>{getStatusBadge(detail.status)} {getBalanceBadge(detail.isBalance)}</div>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="fw-bold">Cần điều chỉnh</label>
-                                <div>{detail.isAdjust ? 'Có' : 'Không'}</div>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="fw-bold">Tiêu hủy</label>
-                                <div>{detail.isDestroy ? 'Có' : 'Không'}</div>
                             </div>
                             <div className="col-md-6">
                                 <label className="fw-bold">Người duyệt</label>
@@ -107,11 +85,10 @@ const ModalViewStockTake = (props) => {
                                 <tr>
                                     <th>Thuốc</th>
                                     <th>Đơn vị</th>
-                                    <th>SL hệ thống</th>
-                                    <th>SL thực tế</th>
-                                    <th>Chênh lệch</th>
-                                    <th>Điều chỉnh</th>
-                                    <th>Tiêu hủy</th>
+                                    <th>SL tiêu hủy</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                    <th>Lý do</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -120,21 +97,16 @@ const ModalViewStockTake = (props) => {
                                         <tr key={`view-item-${index}`}>
                                             <td>{item.medicineName}</td>
                                             <td>{item.unitName}</td>
-                                            <td>{item.systemQuantity}</td>
-                                            <td>{item.actualQuantity}</td>
-                                            <td>
-                                                <span className={`fw-bold ${item.differenceQuantity === 0 ? 'text-success' : (item.differenceQuantity > 0 ? 'text-primary' : 'text-danger')}`}>
-                                                    {item.differenceQuantity > 0 ? `+${item.differenceQuantity}` : item.differenceQuantity}
-                                                </span>
-                                            </td>
-                                            <td>{item.isAdjust ? 'Có' : 'Không'}</td>
-                                            <td>{item.isDestroy ? 'Có' : 'Không'}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{formatMoney(item.unitCost)}</td>
+                                            <td>{formatMoney(item.quantity * item.unitCost)}</td>
+                                            <td>{item.reasonCode || '—'}</td>
                                         </tr>
                                     ))
                                 }
                                 {detail.items && detail.items.length === 0 &&
                                     <tr>
-                                        <td colSpan={7} className="text-center text-muted">
+                                        <td colSpan={6} className="text-center text-muted">
                                             Không có chi tiết
                                         </td>
                                     </tr>
@@ -145,7 +117,7 @@ const ModalViewStockTake = (props) => {
                 )}
 
                 {!loading && !detail && (
-                    <div className="text-center text-muted">Không tìm thấy phiếu kiểm kê</div>
+                    <div className="text-center text-muted">Không tìm thấy phiếu tiêu hủy</div>
                 )}
             </Modal.Body>
             <Modal.Footer>
@@ -157,4 +129,4 @@ const ModalViewStockTake = (props) => {
     );
 };
 
-export default ModalViewStockTake;
+export default ModalViewDestroyReceipt;

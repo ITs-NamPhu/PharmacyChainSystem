@@ -27,6 +27,7 @@ import IndexManageGoodsReceipt from './components/ManageGoodsReceipt/IndexManage
 import IndexManageWarehouse_Medicine from './components/ManageWarehouse_Medicine/IndexManageWarehouse_Medicine';
 import IndexStockTake from './components/ManageWareHouse/ManageStockTake/IndexManageStockTake';
 import IndexStockTakeAdjustment from './components/ManageWareHouse/ManageStockTakeAdjustment/IndexManageStockTakeAdjustment';
+import IndexDestroyMedicine from './components/ManageWareHouse/ManageDestroyMedicine/IndexManageDestroyMedicine';
 import IndexConfig from './components/ManageConfig/IndexConfig';
 
 const Layout = (props) => {
@@ -61,6 +62,7 @@ const Layout = (props) => {
                     <Route path='managewarehouse_medicine' element={<RoleRoute roles={ROUTE_PERMISSIONS.managewarehouse_medicine}><IndexManageWarehouse_Medicine /></RoleRoute>} />
                     <Route path='managestocktake' element={<RoleRoute roles={ROUTE_PERMISSIONS.managestocktake}><IndexStockTake /></RoleRoute>} />
                     <Route path='managestockadjustment' element={<RoleRoute roles={ROUTE_PERMISSIONS.managestockadjustment}><IndexStockTakeAdjustment /></RoleRoute>} />
+                    <Route path='managedestroy' element={<RoleRoute roles={ROUTE_PERMISSIONS.managedestroy}><IndexDestroyMedicine /></RoleRoute>} />
                     <Route path='config' element={<RoleRoute roles={ROUTE_PERMISSIONS.config}><IndexConfig /></RoleRoute>} />
 
                 </Route>

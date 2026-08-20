@@ -155,6 +155,12 @@ const Sidebar = (props) => {
                                     <span onClick={() => navigate('/admin/managestockadjustment')}>Điều chỉnh kho</span>
                                 </a>
                             )}
+                            {canAccess('managedestroy', roleName) && (
+                                <a className="nav-item" href="#">
+                                    <svg className="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    <span onClick={() => navigate('/admin/managedestroy')}>Tiêu hủy thuốc</span>
+                                </a>
+                            )}
                             <a className="nav-item" href="#">
                                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                                 <span>Báo cáo</span>

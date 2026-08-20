@@ -26,15 +26,9 @@ namespace PharmacyManagement.Validators.BusinessRule
                     "SA002",
                     StatusCodes.Status400BadRequest);
 
-            if (stockTake.IsBalance != StockTakeResult.Difference)
+            if (!stockTake.IsAdjust)
                 throw new BusinessException(
-                    "Stock take is balanced. No adjustment is required.",
-                    "SA003",
-                    StatusCodes.Status400BadRequest);
-
-            if (stockTake.IsAdjusted)
-                throw new BusinessException(
-                    "Stock take has already been adjusted.",
+                    "Stock take has no items flagged for adjustment.",
                     "SA004",
                     StatusCodes.Status400BadRequest);
 
@@ -94,6 +88,12 @@ namespace PharmacyManagement.Validators.BusinessRule
                 throw new BusinessException(
                     "Stock take item does not belong to the given batch.",
                     "SA010",
+                    StatusCodes.Status400BadRequest);
+
+            if (!item.IsAdjust)
+                throw new BusinessException(
+                    $"Stock take item ID {stockTakeItemId} is not flagged for adjustment.",
+                    "SA015",
                     StatusCodes.Status400BadRequest);
         }
 

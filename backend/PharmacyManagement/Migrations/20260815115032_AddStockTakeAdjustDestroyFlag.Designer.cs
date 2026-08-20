@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PharmacyManagement.Models;
 
@@ -11,9 +12,11 @@ using PharmacyManagement.Models;
 namespace PharmacyManagement.Migrations
 {
     [DbContext(typeof(PharmacySystemDbContext))]
-    partial class PharmacySystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260815115032_AddStockTakeAdjustDestroyFlag")]
+    partial class AddStockTakeAdjustDestroyFlag
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,68 +138,6 @@ namespace PharmacyManagement.Migrations
                     b.HasIndex("PriceListID");
 
                     b.ToTable("Branch", (string)null);
-                });
-
-            modelBuilder.Entity("PharmacyManagement.Models.ChatConversation", b =>
-                {
-                    b.Property<long>("ConversationID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("ConversationID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("UserID")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("ConversationID");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("ChatConversation", (string)null);
-                });
-
-            modelBuilder.Entity("PharmacyManagement.Models.ChatMessage", b =>
-                {
-                    b.Property<long>("MessageID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("MessageID"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("ConversationID")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("MessageID");
-
-                    b.HasIndex("ConversationID");
-
-                    b.ToTable("ChatMessage", (string)null);
                 });
 
             modelBuilder.Entity("PharmacyManagement.Models.Customer", b =>
@@ -1397,28 +1338,6 @@ namespace PharmacyManagement.Migrations
                     b.Navigation("PriceList");
                 });
 
-            modelBuilder.Entity("PharmacyManagement.Models.ChatConversation", b =>
-                {
-                    b.HasOne("PharmacyManagement.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PharmacyManagement.Models.ChatMessage", b =>
-                {
-                    b.HasOne("PharmacyManagement.Models.ChatConversation", "Conversation")
-                        .WithMany("Messages")
-                        .HasForeignKey("ConversationID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Conversation");
-                });
-
             modelBuilder.Entity("PharmacyManagement.Models.Customer", b =>
                 {
                     b.HasOne("PharmacyManagement.Models.CustomerType", "CustomerType")
@@ -1978,11 +1897,6 @@ namespace PharmacyManagement.Migrations
                     b.Navigation("UserBranch");
 
                     b.Navigation("WareHouse");
-                });
-
-            modelBuilder.Entity("PharmacyManagement.Models.ChatConversation", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("PharmacyManagement.Models.Customer", b =>

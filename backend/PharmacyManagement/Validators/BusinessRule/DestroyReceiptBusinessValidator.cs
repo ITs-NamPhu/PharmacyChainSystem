@@ -56,10 +56,10 @@ namespace PharmacyManagement.Validators.BusinessRule
                     "DR012",
                     StatusCodes.Status400BadRequest);
 
-            if (stockTake.IsBalance != StockTakeResult.Difference)
+            if (!stockTake.IsDestroy)
                 throw new BusinessException(
-                    "Stock take is balanced. No destroy is required.",
-                    "DR013",
+                    "Stock take has no items flagged for destruction.",
+                    "DR018",
                     StatusCodes.Status400BadRequest);
 
             if (stockTake.WarehouseID != warehouseId)
@@ -100,6 +100,12 @@ namespace PharmacyManagement.Validators.BusinessRule
                     throw new BusinessException(
                         "Stock take item does not belong to the given batch.",
                         "DR005",
+                        StatusCodes.Status400BadRequest);
+
+                if (!item.IsDestroy)
+                    throw new BusinessException(
+                        $"Stock take item ID {stockTakeItemId} is not flagged for destruction.",
+                        "DR019",
                         StatusCodes.Status400BadRequest);
             }
         }

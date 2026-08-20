@@ -15,7 +15,8 @@ namespace PharmacyManagement.Mappers
                 Note = request.Note ?? string.Empty,
                 IsBalance = StockTakeResult.Difference,
                 Status = StockTakeStatus.Draft,
-                IsAdjusted = false
+                IsAdjust = false,
+                IsDestroy = false
             };
         }
 
@@ -30,7 +31,9 @@ namespace PharmacyManagement.Mappers
                 BatchID = request.BatchID,
                 SystemQuantity = systemQuantity,
                 ActualQuantity = request.ActualQuantity,
-                DifferenceQuantity = request.ActualQuantity - systemQuantity
+                DifferenceQuantity = request.ActualQuantity - systemQuantity,
+                IsAdjust = request.IsAdjust,
+                IsDestroy = request.IsDestroy
             };
         }
 
@@ -47,7 +50,8 @@ namespace PharmacyManagement.Mappers
                 Note = entity.Note,
                 IsBalance = entity.IsBalance.ToString(),
                 Status = entity.Status.ToString(),
-                IsAdjusted = entity.IsAdjusted,
+                IsAdjust = entity.IsAdjust,
+                IsDestroy = entity.IsDestroy,
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
                 ItemCount = entity.StockTakeItem?.Count ?? 0
@@ -67,7 +71,8 @@ namespace PharmacyManagement.Mappers
                 Note = entity.Note,
                 IsBalance = entity.IsBalance.ToString(),
                 Status = entity.Status.ToString(),
-                IsAdjusted = entity.IsAdjusted,
+                IsAdjust = entity.IsAdjust,
+                IsDestroy = entity.IsDestroy,
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
                 Items = entity.StockTakeItem?.Select(item => new StockTakeItemDetailResponse
@@ -79,7 +84,9 @@ namespace PharmacyManagement.Mappers
                     UnitName = item.Batch?.GoodsReceiptItem?.UnitName ?? string.Empty,
                     SystemQuantity = item.SystemQuantity,
                     ActualQuantity = item.ActualQuantity,
-                    DifferenceQuantity = item.DifferenceQuantity
+                    DifferenceQuantity = item.DifferenceQuantity,
+                    IsAdjust = item.IsAdjust,
+                    IsDestroy = item.IsDestroy
                 }).ToList() ?? new List<StockTakeItemDetailResponse>()
             };
         }

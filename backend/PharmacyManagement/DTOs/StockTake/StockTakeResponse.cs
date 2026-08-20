@@ -11,7 +11,8 @@ namespace PharmacyManagement.DTOs.StockTake
         public string Note { get; set; } = string.Empty;
         public string IsBalance { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public bool IsAdjusted { get; set; }
+        public bool IsAdjust { get; set; }
+        public bool IsDestroy { get; set; }
         public long? ApprovedBy { get; set; }
         public DateTime? ApprovedAt { get; set; }
         public int ItemCount { get; set; }

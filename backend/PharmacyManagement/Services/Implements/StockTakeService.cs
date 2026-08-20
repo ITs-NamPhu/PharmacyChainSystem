@@ -24,6 +24,7 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<StockTakeDetailResponse> CreateAsync(CreateStockTakeRequest request, long userId)
         {
+            // 1. Validate request (items count, warehouse existence, batch existence in warehouse)
             if (request.Items.Count == 0)
                 throw new BusinessException("Stock take must contain at least one item.", "ST009", StatusCodes.Status400BadRequest);
 
@@ -42,6 +43,9 @@ namespace PharmacyManagement.Services.Implements
             stockTake.IsBalance = stockTake.StockTakeItem.All(i => i.DifferenceQuantity == 0)
                 ? StockTakeResult.Balanced
                 : StockTakeResult.Difference;
+
+            stockTake.IsAdjust = stockTake.StockTakeItem.Any(i => i.IsAdjust);
+            stockTake.IsDestroy = stockTake.StockTakeItem.Any(i => i.IsDestroy);
 
 
 

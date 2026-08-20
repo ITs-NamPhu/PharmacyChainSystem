@@ -14,7 +14,8 @@ namespace PharmacyManagement.Models
         public String Note { get; set; }
         public StockTakeResult IsBalance { get; set; }
         public StockTakeStatus Status { get; set; }
-        public bool IsAdjusted { get; set; }
+        public bool IsAdjust { get; set; }
+        public bool IsDestroy { get; set; }
         public long? ApprovedBy { get; set; }
         public DateTime? ApprovedAt { get; set; }
 

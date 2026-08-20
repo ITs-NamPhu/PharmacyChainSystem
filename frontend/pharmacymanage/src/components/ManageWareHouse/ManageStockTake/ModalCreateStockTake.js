@@ -62,7 +62,9 @@ const ModalCreateStockTake = (props) => {
                     medicineName: batch.medicineName,
                     unitName: batch.unitName,
                     systemQuantity: batch.quantityInStock,
-                    actualQuantity: batch.quantityInStock
+                    actualQuantity: batch.quantityInStock,
+                    isAdjust: false,
+                    isDestroy: false
                 })
             )
         );
@@ -79,6 +81,12 @@ const ModalCreateStockTake = (props) => {
     const handleChangeItem = (index, value) => {
         const updated = [...items];
         updated[index].actualQuantity = value;
+        setItems(updated);
+    };
+
+    const handleChangeFlag = (index, field, value) => {
+        const updated = [...items];
+        updated[index][field] = value;
         setItems(updated);
     };
 
@@ -102,7 +110,9 @@ const ModalCreateStockTake = (props) => {
 
         const submitItems = items.map(item => ({
             BatchID: +item.batchID,
-            ActualQuantity: +item.actualQuantity
+            ActualQuantity: +item.actualQuantity,
+            IsAdjust: !!item.isAdjust,
+            IsDestroy: !!item.isDestroy
         }));
 
         let res = await CreateStockTake(+warehouseID, note, submitItems);
@@ -168,12 +178,14 @@ const ModalCreateStockTake = (props) => {
                                 <th style={{ width: '15%' }}>SL hệ thống</th>
                                 <th style={{ width: '18%' }}>SL thực tế</th>
                                 <th style={{ width: '20%' }}>Chênh lệch</th>
+                                <th style={{ width: '10%' }}>Điều chỉnh</th>
+                                <th style={{ width: '10%' }}>Tiêu hủy</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.length === 0 && !loading &&
                                 <tr>
-                                    <td colSpan={5} className="text-center text-muted">
+                                    <td colSpan={7} className="text-center text-muted">
                                         Không có lô hàng nào trong kho
                                     </td>
                                 </tr>
@@ -203,6 +215,26 @@ const ModalCreateStockTake = (props) => {
                                             <span className={`fw-bold ${diff === 0 ? 'text-success' : (diff > 0 ? 'text-primary' : 'text-danger')}`}>
                                                 {diff > 0 ? `+${diff}` : diff}
                                             </span>
+                                        </td>
+                                        <td className="text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!item.isAdjust}
+                                                disabled={diff === 0}
+                                                onChange={(event) =>
+                                                    handleChangeFlag(index, 'isAdjust', event.target.checked)
+                                                }
+                                            />
+                                        </td>
+                                        <td className="text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!item.isDestroy}
+                                                disabled={diff === 0}
+                                                onChange={(event) =>
+                                                    handleChangeFlag(index, 'isDestroy', event.target.checked)
+                                                }
+                                            />
                                         </td>
                                     </tr>
                                 );
