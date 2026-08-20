@@ -83,3 +83,127 @@ giao diện User_Sales: Mục tiêu: Giao diện tối giản nhất. Tập trun
 |                | [ - Panadol đỏ hiện chỉ còn 2 hộp (Báo quản lý nhập thêm)] |
 +-----------------------------------------------------------------------------+
 
+
+
+
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+WORKDIR /src
+
+COPY . .
+
+RUN dotnet restore
+
+RUN dotnet publish -c Release -o /app/publish
+
+
+
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+ENTRYPOINT ["dotnet","PharmacyAPI.dll"]
+
+--
+Thay vì đặt tên API theo widget (TopMedicine, TopBranch...), hãy đặt theo miền nghiệp vụ (Business Domain). Ví dụ:
+Dashboard
+│
+├── /summary
+├── /sales
+├── /inventory
+├── /activity
+Trong đó:
+
+/dashboard/summary
+	KPI doanh thu
+	KPI hóa đơn
+	KPI khách hàng
+/dashboard/sales
+	Doanh thu theo tháng
+	Top thuốc bán chạy
+	Top khách hàng
+	Top chi nhánh (nếu là admin hoặc manager_supply)
+/dashboard/inventory
+	Thuốc sắp hết
+	Thuốc sắp hết hạn
+	Giá trị tồn kho
+/dashboard/activity
+	Hóa đơn gần đây
+	Phiếu nhập gần đây
+	Phiếu kiểm kê
+	Nhật ký hoạt động
+
+--
+Nên xây dựng chatbot ở 1 góc màn hình hoặc thêm vào sidebar
+lv1: RAG (hỏi đáp tài liệu nội bộ)
+lv2: AI-Agent (hỏi dữ liệu hệ thống), gọi API BE(không cho AI interact vs db)
+	ví dụ: "Kho nào đang có thuốc sắp hết?" -> Agent gọi get_low_stock_medicines()
+lv3: AI-Agent analyst và recomment 
+	ví dụ: 
+		Không chỉ: "Thuốc A tồn 5 hộp."
+		Mà: "Thuốc A đang tồn 5 hộp, trung bình bán 8 hộp/ngày trong 7 ngày gần nhất. 
+			Với tốc độ bán hiện tại, dự kiến hết hàng trong chưa đến 1 ngày."
+			
+	Case: Dự báo hết hàng
+		User:"Thuốc nào có nguy cơ hết hàng trong 7 ngày tới?"
+		Agent lấy:
+		Current Stock + Sales History + Average Daily Sales
+		Sau đó tính:
+		DaysOfStock = CurrentStock / AverageDailySales
+		
+		Paracetamol
+		Stock = 50
+		Average sale = 10/day
+		Days of stock = 5 days
+lv4: AI thực hiện nghiệp vụ
+	Ví dụ: "Tạo phiếu nhập cho Paracetamol, số lượng 500 hộp."
+		Chuẩn bị workflow:
+			User
+			 ↓
+			AI
+			 ↓
+			Validate
+			 ↓
+			Preview
+			 ↓
+			User Confirm
+			 ↓
+			.NET API
+			 ↓
+			Service
+			 ↓
+			Database
+		UI:
+			┌─────────────────────────────────────┐
+			│ AI đề xuất tạo phiếu nhập           │
+			│                                     │
+			│ Supplier: ABC                       │
+			│ Medicine: Paracetamol               │
+			│ Quantity: 500 hộp                   │
+			│                                     │
+			│ [Hủy]              [Xác nhận]       │
+			└─────────────────────────────────────┘
+			Chỉ khi user click "Xác nhận" mới thực thi
+	**Có thể tích hợp (AI giải thích dashboard)**
+	Ví dụ: Dashboard có:
+		Revenue: 350 triệu ↓ 12%
+		User hỏi: "Tại sao doanh thu tháng này giảm?"
+		Agent có thể lấy: Revenue + Invoice + Top medicines + Branch performance
+		Sau đó phân tích:
+			Doanh thu giảm 12%.
+			Nguyên nhân chính:
+			1. Chi nhánh A giảm 18%.
+			2. Nhóm thuốc cảm cúm giảm 25%.
+			3. 3 sản phẩm bán chạy bị thiếu hàng trong 5 ngày.
+	
+
+
+
+
+
+

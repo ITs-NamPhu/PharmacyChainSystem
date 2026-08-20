@@ -53,6 +53,9 @@ namespace PharmacyManagement.Models
         public DbSet<StockAdjustmentItem> StockAdjustmentItem { get; set; }
         public DbSet<RefreshToken> RefreshToken { get; set; }
 
+        public DbSet<ChatConversation> ChatConversation { get; set; }
+        public DbSet<ChatMessage> ChatMessage { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -100,6 +103,9 @@ namespace PharmacyManagement.Models
             modelBuilder.Entity<StockAdjustmentItem>().ToTable("StockAdjustmentItem");
             modelBuilder.Entity<RefreshToken>().ToTable("RefreshToken");
 
+            modelBuilder.Entity<ChatConversation>().ToTable("ChatConversation");
+            modelBuilder.Entity<ChatMessage>().ToTable("ChatMessage");
+
             modelBuilder.Entity<RolePermission>(entity =>
             {
                 entity.HasKey(e => e.RolePermissionID);
@@ -140,6 +146,26 @@ namespace PharmacyManagement.Models
                     .WithMany()
                     .HasForeignKey(e => e.StockTakeItemID)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ChatConversation>(entity =>
+            {
+                entity.HasKey(e => e.ConversationID);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.HasKey(e => e.MessageID);
+
+                entity.HasOne(e => e.Conversation)
+                    .WithMany(c => c.Messages)
+                    .HasForeignKey(e => e.ConversationID)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
         }

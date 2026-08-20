@@ -23,12 +23,18 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<StockAdjustmentDetailResponse> CreateAsync(CreateStockAdjustmentRequest request, long userId)
         {
+
+            // 1. Validate request items
             if (request.Items.Count == 0)
                 throw new BusinessException("Stock adjustment must contain at least one item.", "SA014", StatusCodes.Status400BadRequest);
 
+            // Validate stock take and ensure no existing adjustment
             var stockTake = await _businessValidator.ValidateStockTakeCanAdjustAsync(request.StockTakeID);
+
             await _businessValidator.EnsureNoAdjustmentExistsAsync(request.StockTakeID);
 
+
+            // Validate batches and stock quantities
             var batches = await _businessValidator.ValidateBatchesInWarehouseAsync(
                 request.Items.Select(i => i.BatchID),
                 stockTake.WarehouseID);
@@ -40,10 +46,13 @@ namespace PharmacyManagement.Services.Implements
             }
 
             var adjustment = request.ToEntity(userId);
+
             adjustment.WarehouseID = stockTake.WarehouseID;
             adjustment.StockAdjustmentItem = request.Items
                 .Select(item => item.ToEntity(0))
                 .ToList();
+
+
 
             await _repository.BeginTransactionAsync();
             try
