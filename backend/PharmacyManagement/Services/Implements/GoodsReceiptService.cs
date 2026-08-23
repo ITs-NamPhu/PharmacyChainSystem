@@ -5,6 +5,7 @@ using PharmacyManagement.Mappers;
 using PharmacyManagement.Models;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using Microsoft.AspNetCore.Http;
 
@@ -366,16 +367,16 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<GoodsReceiptListResponse> GetAllAsync(int page, int count, long branchId)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetAllAsync(skip, count, branchId);
-            int numRecords = await _repository.CountAsync(branchId);
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetAllAsync(skip, take, branchId),
+                () => _repository.CountAsync(branchId),
+                page, count);
 
             return new GoodsReceiptListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                GoodsReceipts = entities.ToResponseList()
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                GoodsReceipts = paged.Items.ToResponseList()
             };
         }
     }

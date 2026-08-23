@@ -16,7 +16,7 @@ namespace PharmacyManagement.Services.Interfaces
 
         Task<UserResponse> GetUserByIDAsync_Service(long userID, long branchID);
 
-        Task<List<UserResponse>> GetAllUserbyBranchAsync_Service(long branchID, int page, int count);
+        Task<UserListResponse> GetAllUserbyBranchAsync_Service(long branchID, int page, int count);
 
         Task<UserResponse> AssignRoleToUserAsync(long userId, UserAssignmentRequest request, long callerUserId, long callerBranchId);
     }
