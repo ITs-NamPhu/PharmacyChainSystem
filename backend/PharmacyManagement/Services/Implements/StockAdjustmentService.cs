@@ -3,6 +3,7 @@ using PharmacyManagement.Exceptions;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using Microsoft.AspNetCore.Http;
 
@@ -102,16 +103,16 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<StockAdjustmentListResponse> GetAllAsync(int page, int count, long warehouseId)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetAllAsync(skip, count, warehouseId);
-            int numRecords = await _repository.CountAsync(warehouseId);
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetAllAsync(skip, take, warehouseId),
+                () => _repository.CountAsync(warehouseId),
+                page, count);
 
             return new StockAdjustmentListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                StockAdjustments = entities.ToResponseList()
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                StockAdjustments = paged.Items.ToResponseList()
             };
         }
     }

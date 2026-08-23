@@ -4,6 +4,7 @@ using PharmacyManagement.Mappers;
 using PharmacyManagement.Models;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using System.Net;
 
@@ -68,16 +69,19 @@ namespace PharmacyManagement.Services.Implements
             await _repository.SaveChangesAsync();
         }
 
-        public async Task<List<UserResponse>> GetAllUserbyBranchAsync_Service(long branchID, int page, int count)
+        public async Task<UserListResponse> GetAllUserbyBranchAsync_Service(long branchID, int page, int count)
         {
-            int passRows = page * count;
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetAllUsersByBranchAsync(branchID, skip, take),
+                () => _repository.CountActiveUsersByBranchAsync(branchID),
+                page, count);
 
-            List<User> users = await _repository.GetAllUsersByBranchAsync(branchID, passRows, count);
-
-            if (users == null)
-                throw new NotImplementedException();
-
-            return users.ToResponseList();
+            return new UserListResponse
+            {
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                Users = paged.Items.ToResponseList()
+            };
         }
 
         public async Task<UserResponse> GetUserByIDAsync_Service(long userID, long branchID)
@@ -91,25 +95,16 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<UserListResponse> GetAllUserActiveAsync_Service(long branchID, int page, int count)
         {
-            Console.WriteLine("brandid:{0}", branchID);
-            Console.WriteLine("page:{0}", page);
-            Console.WriteLine("limitpage:{0}", count);
-
-            int cal_page = page - 1;
-            int passRows = cal_page * count;
-            List<User> users = await _repository.GetActiveUsersByBranchAsync(branchID, passRows, count);
-
-            if (users == null)
-                throw new NotImplementedException();
-
-            int num_records = await _repository.CountActiveUsersByBranchAsync(branchID);
-            float totalPage = (float)Math.Ceiling((double)num_records / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetActiveUsersByBranchAsync(branchID, skip, take),
+                () => _repository.CountActiveUsersByBranchAsync(branchID),
+                page, count);
 
             return new UserListResponse
             {
-                TotalPage = totalPage,
-                NumRecords = num_records,
-                Users = users.ToResponseList()
+                TotalPage = paged.TotalPage,
+                NumRecords = paged.NumRecords,
+                Users = paged.Items.ToResponseList()
             };
         }
 

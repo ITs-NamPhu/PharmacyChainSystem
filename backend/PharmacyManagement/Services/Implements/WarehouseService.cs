@@ -3,6 +3,7 @@ using PharmacyManagement.Exceptions;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using Microsoft.AspNetCore.Http;
 
@@ -61,31 +62,29 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<WarehouseListResponse> GetAllAsync(int page, int count)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetAllAsync(skip, count);
-            int numRecords = await _repository.CountAsync();
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                _repository.GetAllAsync, _repository.CountAsync, page, count);
 
             return new WarehouseListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                Warehouses = entities.ToResponseList()
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                Warehouses = paged.Items.ToResponseList()
             };
         }
 
         public async Task<WarehouseListResponse> GetByBranchAsync(long branchId, int page, int count)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetByBranchAsync(branchId, skip, count);
-            int numRecords = await _repository.CountByBranchAsync(branchId);
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetByBranchAsync(branchId, skip, take),
+                () => _repository.CountByBranchAsync(branchId),
+                page, count);
 
             return new WarehouseListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                Warehouses = entities.ToResponseList()
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                Warehouses = paged.Items.ToResponseList()
             };
         }
 
@@ -97,16 +96,16 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<WarehouseBatchListResponse> GetBatchesByWarehouseAsync(long warehouseId, int page, int count)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetBatchesByWarehouseAsync(warehouseId, skip, count);
-            int numRecords = await _repository.CountBatchesByWarehouseAsync(warehouseId);
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetBatchesByWarehouseAsync(warehouseId, skip, take),
+                () => _repository.CountBatchesByWarehouseAsync(warehouseId),
+                page, count);
 
             return new WarehouseBatchListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                Batches = entities.Select(b => new WarehouseBatchResponse
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                Batches = paged.Items.Select(b => new WarehouseBatchResponse
                 {
                     BatchID = b.BatchID,
                     MedicineID = b.GoodsReceiptItem!.MedicineID,

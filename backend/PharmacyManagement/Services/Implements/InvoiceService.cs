@@ -8,6 +8,7 @@ using PharmacyManagement.Models;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
 using PharmacyManagement.Services.BatchSelection;
+using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using Microsoft.AspNetCore.Http;
 
@@ -307,16 +308,16 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<InvoiceListResponse> GetAllAsync(int page, int count, long branchId)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetAllAsync(skip, count, branchId);
-            int numRecords = await _repository.CountAsync(branchId);
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                (skip, take) => _repository.GetAllAsync(skip, take, branchId),
+                () => _repository.CountAsync(branchId),
+                page, count);
 
             return new InvoiceListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                Invoices = entities.ToResponseList()
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                Invoices = paged.Items.ToResponseList()
             };
         }
 
