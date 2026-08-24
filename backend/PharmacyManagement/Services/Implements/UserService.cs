@@ -64,7 +64,8 @@ namespace PharmacyManagement.Services.Implements
                     StatusCodes.Status404NotFound);
             }
 
-            user.IsActive = false;
+            // xóa mềm: HandleSoftDelete() trong DbContext sẽ tự chuyển DELETE thành UPDATE IsDeleted = true
+            _repository.DeleteAsync(user);
 
             await _repository.SaveChangesAsync();
         }

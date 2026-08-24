@@ -50,6 +50,9 @@ namespace PharmacyManagement.Services.Implements
             if (entity == null)
                 throw new BusinessException("Medicine category not found.", "MCAT004", StatusCodes.Status404NotFound);
 
+            // chỉ cho xóa khi không còn bảng con (Medicine) tham chiếu
+            await _businessValidator.ValidateCategoryNotInUseAsync(id);
+
             _repository.Delete(entity);
             await _repository.SaveChangesAsync();
         }

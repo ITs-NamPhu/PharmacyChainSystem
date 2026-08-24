@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using PharmacyManagement.Models;
 using PharmacyManagement.Repositories.Interfaces;
 
@@ -7,6 +8,7 @@ namespace PharmacyManagement.Repositories.Implements
     public class GoodsReceiptRepository : IGoodsReceiptRepository
     {
         private readonly PharmacySystemDbContext _context;
+        private IDbContextTransaction? _transaction;
 
         public GoodsReceiptRepository(PharmacySystemDbContext context)
         {
@@ -47,7 +49,9 @@ namespace PharmacyManagement.Repositories.Implements
 
         public async Task<long> GetNextReceiptNumberAsync()
         {
+            // IgnoreQueryFilters: vẫn tính cả phiếu đã xóa mềm để không bị trùng số phiếu
             var maxNumber = await _context.GoodsReceipt
+                .IgnoreQueryFilters()
                 .MaxAsync(gr => (long?)gr.ReceiptNumber) ?? 0;
             return maxNumber + 1;
         }
@@ -72,6 +76,11 @@ namespace PharmacyManagement.Repositories.Implements
             _context.GoodsReceiptItem.RemoveRange(items);
         }
 
+        public void RemoveBatches(IEnumerable<Batch> batches)
+        {
+            _context.Batch.RemoveRange(batches);
+        }
+
         public async Task<GoodsReceiptItem?> GetItemByIdAsync(long itemId)
         {
             return await _context.GoodsReceiptItem
@@ -82,6 +91,41 @@ namespace PharmacyManagement.Repositories.Implements
         public async Task<Batch?> GetBatchByIdAsync(long batchId)
         {
             return await _context.Batch.FindAsync(batchId);
+        }
+
+        public async Task<bool> HasAnyReferenceForBatchesAsync(IEnumerable<long> batchIds)
+        {
+            var ids = batchIds.ToList();
+            if (ids.Count == 0) return false;
+
+            // chặn xóa khi batch của phiếu được tham chiếu bởi bất kỳ bảng nào
+            return await _context.InvoiceItem.AnyAsync(ii => ids.Contains(ii.BatchID))
+                || await _context.PurchaseReturnItem.AnyAsync(pri => ids.Contains(pri.BatchID))
+                || await _context.SalesReturnItem.AnyAsync(sri => ids.Contains(sri.BatchID))
+                || await _context.DestroyReceiptItem.AnyAsync(dri => ids.Contains(dri.BatchID))
+                || await _context.StockAdjustmentItem.AnyAsync(sai => ids.Contains(sai.BatchID))
+                || await _context.StockTakeItem.AnyAsync(sti => ids.Contains(sti.BatchID));
+        }
+
+        public async Task BeginTransactionAsync()
+        {
+            _transaction = await _context.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            if (_transaction == null) return;
+            await _transaction.CommitAsync();
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            if (_transaction == null) return;
+            await _transaction.RollbackAsync();
+            await _transaction.DisposeAsync();
+            _transaction = null;
         }
 
         public async Task SaveChangesAsync()

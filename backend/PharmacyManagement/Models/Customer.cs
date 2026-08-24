@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Numerics;
+using PharmacyManagement.share;
 
 namespace PharmacyManagement.Models
 {
-	public class Customer
+	public class Customer : ISoftDelete
 	{
 		public long CustomerID { get; set; }
 
@@ -22,5 +23,6 @@ namespace PharmacyManagement.Models
         public ICollection<Invoice>? Invoice { get; set; }
         public ICollection<SalesReturn>? SalesReturn { get; set; }
 
+        public bool IsDeleted { get; set; }
     }
 }

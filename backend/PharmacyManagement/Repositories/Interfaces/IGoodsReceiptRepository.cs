@@ -12,8 +12,13 @@ namespace PharmacyManagement.Repositories.Interfaces
         void Update(GoodsReceipt entity);
         void Delete(GoodsReceipt entity);
         void RemoveGoodsReceiptItems(IEnumerable<GoodsReceiptItem> items);
+        void RemoveBatches(IEnumerable<Batch> batches);
         Task<GoodsReceiptItem?> GetItemByIdAsync(long itemId);
         Task<Batch?> GetBatchByIdAsync(long batchId);
+        Task<bool> HasAnyReferenceForBatchesAsync(IEnumerable<long> batchIds);
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
         Task SaveChangesAsync();
     }
 }

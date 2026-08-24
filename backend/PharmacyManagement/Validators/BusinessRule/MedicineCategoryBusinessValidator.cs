@@ -23,5 +23,16 @@ namespace PharmacyManagement.Validators.BusinessRule
                     StatusCodes.Status409Conflict);
             }
         }
+
+        public async Task ValidateCategoryNotInUseAsync(long categoryId)
+        {
+            if (await _repository.HasMedicinesAsync(categoryId))
+            {
+                throw new BusinessException(
+                    "Cannot delete medicine category because it is used by medicines.",
+                    "MCAT005",
+                    StatusCodes.Status400BadRequest);
+            }
+        }
     }
 }

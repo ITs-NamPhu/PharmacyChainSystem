@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Build.Tasks.Deployment.Bootstrapper;
 using Microsoft.EntityFrameworkCore;
+using PharmacyManagement.share;
 using System.Drawing;
 
 namespace PharmacyManagement.Models
@@ -168,6 +169,44 @@ namespace PharmacyManagement.Models
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // Global Query Filter: loại bỏ các bản ghi đã bị xóa mềm (IsDeleted = true)
+            modelBuilder.Entity<Customer>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<ManuFacturer>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Medicine>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Supplier>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<User>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Invoice>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<GoodsReceipt>().HasQueryFilter(p => !p.IsDeleted);
+
+        }
+
+        public override int SaveChanges()
+        {
+            HandleSoftDelete();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            HandleSoftDelete();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void HandleSoftDelete()
+        {
+            // Lấy tất cả các object đang bị đánh dấu là "Deleted" (chuẩn bị xóa)
+            var deletedEntries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Deleted && e.Entity is ISoftDelete);
+
+            foreach (var entry in deletedEntries)
+            {
+                // 1. Đổi trạng thái từ Deleted sang Modified để EF Core sinh lệnh UPDATE thay vì DELETE
+                entry.State = EntityState.Modified;
+
+                // 2. Ép kiểu entity về ISoftDelete và gán IsDeleted = true
+                var entity = (ISoftDelete)entry.Entity;
+                entity.IsDeleted = true;
+            }
         }
     }
 }
