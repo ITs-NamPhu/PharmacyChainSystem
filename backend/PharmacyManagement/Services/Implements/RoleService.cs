@@ -3,6 +3,7 @@ using PharmacyManagement.Exceptions;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using Microsoft.AspNetCore.Http;
 
@@ -61,16 +62,14 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<RoleListResponse> GetAllAsync(int page, int count)
         {
-            int skip = (page - 1) * count;
-            var entities = await _repository.GetAllAsync(skip, count);
-            int numRecords = await _repository.CountAsync();
-            float totalPage = (float)Math.Ceiling((double)numRecords / count);
+            var paged = await PaginationHelper.GetPagedAsync(
+                _repository.GetAllAsync, _repository.CountAsync, page, count);
 
             return new RoleListResponse
             {
-                NumRecords = numRecords,
-                TotalPage = totalPage,
-                Roles = entities.ToResponseList()
+                NumRecords = paged.NumRecords,
+                TotalPage = paged.TotalPage,
+                Roles = paged.Items.ToResponseList()
             };
         }
 
