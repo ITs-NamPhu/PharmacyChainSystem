@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using PharmacyManagement.share;
 
 namespace PharmacyManagement.Models
 {
-	public class Invoice
+	public class Invoice : ISoftDelete
 	{
 		public long InvoiceID { get; set; }
         public long CustomerID { get; set; }
@@ -20,6 +21,8 @@ namespace PharmacyManagement.Models
         public Customer? Customer { get; set; }
         public Branch? Branch { get; set; }
         public User? User { get; set; }
+
+        public bool IsDeleted { get; set; }
 
     }
 }

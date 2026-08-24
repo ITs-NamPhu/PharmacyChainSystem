@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Numerics;
+using PharmacyManagement.share;
 
 namespace PharmacyManagement.Models
 {
-	public class Medicine
+	public class Medicine : ISoftDelete
 	{
 		public long MedicineID { get; set; }
 
@@ -25,5 +26,7 @@ namespace PharmacyManagement.Models
         public Unit? Unit { get; set; }
         public ICollection<PromotionItem>? PromotionItem { get; set; }
         public ICollection<PriceListItem>? PriceListItem { get; set; }
+
+        public bool IsDeleted { get; set; }
     }
 }

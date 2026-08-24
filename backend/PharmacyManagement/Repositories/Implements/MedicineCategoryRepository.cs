@@ -18,6 +18,11 @@ namespace PharmacyManagement.Repositories.Implements
             return await _context.MedicineCategory.AnyAsync(x => x.CategoryName == categoryName);
         }
 
+        public async Task<bool> HasMedicinesAsync(long categoryId)
+        {
+            return await _context.Medicine.AnyAsync(m => m.CategoryID == categoryId);
+        }
+
         public async Task<MedicineCategory?> GetByIdAsync(long id)
         {
             return await _context.MedicineCategory.FindAsync(id);

@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using PharmacyManagement.share;
 
 namespace PharmacyManagement.Models
 {
-    public class GoodsReceipt
+    public class GoodsReceipt : ISoftDelete
     {
         public long GoodsReceiptID { get; set; }
         public long ReceiptNumber { get; set; }
@@ -22,5 +23,7 @@ namespace PharmacyManagement.Models
         public User? User { get; set; }
 
         public ICollection<GoodsReceiptItem>? GoodsReceiptItem { get; set; }
+
+        public bool IsDeleted { get; set; }
     }
 }

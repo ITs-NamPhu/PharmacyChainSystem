@@ -332,27 +332,42 @@ namespace PharmacyManagement.Services.Implements
             if (goodsReceipt.BranchID != branchId)
                 throw new BusinessException("Goods receipt not found in this branch.", "GR003", StatusCodes.Status403Forbidden);
 
-            if (goodsReceipt.GoodsReceiptItem != null)
+            // chỉ cho phép xóa khi batch của phiếu chưa được tham chiếu
+            // (hóa đơn, trả NCC, trả hàng, hủy, chỉnh tồn, kiểm kê)
+            var batchIds = goodsReceipt.GoodsReceiptItem?
+                .SelectMany(i => i.Batch ?? new List<Batch>())
+                .Select(b => b.BatchID)
+                .ToList() ?? new List<long>();
+
+            if (await _repository.HasAnyReferenceForBatchesAsync(batchIds))
             {
-                foreach (var item in goodsReceipt.GoodsReceiptItem)
-                {
-                    var batch = item.Batch?.FirstOrDefault();
-                    if (batch != null)
-                    {
-                        var qSold = item.Quantity - batch.QuantityInStock;
-                        if (qSold > 0)
-                        {
-                            throw new BusinessException(
-                                $"Cannot delete receipt because item '{item.Medicine?.MedicineName}' has been sold ({qSold} units).",
-                                "GR004",
-                                StatusCodes.Status400BadRequest);
-                        }
-                    }
-                }
+                throw new BusinessException(
+                    "Cannot delete goods receipt because its batches have related records.",
+                    "GR004",
+                    StatusCodes.Status400BadRequest);
             }
 
-            _repository.Delete(goodsReceipt);
-            await _repository.SaveChangesAsync();
+            // soft delete phiếu + xóa cứng batch, giữ lại toàn bộ GoodsReceiptItem
+            await _repository.BeginTransactionAsync();
+            try
+            {
+                var batches = goodsReceipt.GoodsReceiptItem?
+                    .SelectMany(i => i.Batch ?? new List<Batch>())
+                    .ToList() ?? new List<Batch>();
+                if (batches.Count > 0)
+                    _repository.RemoveBatches(batches);
+
+                // HandleSoftDelete() trong DbContext sẽ tự chuyển DELETE thành UPDATE IsDeleted = true
+                _repository.Delete(goodsReceipt);
+
+                await _repository.SaveChangesAsync();
+                await _repository.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _repository.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task<GoodsReceiptDetailResponse?> GetByIdAsync(long id, long branchId)
