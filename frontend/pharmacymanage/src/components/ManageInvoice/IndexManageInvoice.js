@@ -27,7 +27,7 @@ const IndexManageInvoice = () => {
     const [dataUpdate, setDataUpdate] = useState({});
     const [showModalDeleteInvoice, setShowModalDeleteInvoice] = useState(false);
     const [dataDelete, setDataDelete] = useState({});
-
+    // chạy 1 lần mục đích đọc URL ban đầu (hoặc khi user mở trang hoặc F5) và đổ vào store
     useEffect(() => {
         hydrateFromUrl(searchParams);
     }, []);
@@ -49,6 +49,8 @@ const IndexManageInvoice = () => {
         syncToUrl();
     };
 
+    // khi filters trong store zustand thay đổi cập nhật hook searchParams
+    // toUrlParams() giúp URL clean
     const syncToUrl = useCallback(() => {
         const params = toUrlParams();
         const current = searchParams.toString();
