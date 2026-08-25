@@ -1,5 +1,6 @@
 using PharmacyManagement.DTOs.GoodsReceipt;
 using PharmacyManagement.Exceptions;
+using PharmacyManagement.Extensions;
 using PharmacyManagement.Handlers;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Models;
@@ -380,18 +381,33 @@ namespace PharmacyManagement.Services.Implements
             return goodsReceipt.ToDetailResponse();
         }
 
-        public async Task<GoodsReceiptListResponse> GetAllAsync(int page, int count, long branchId)
+        public async Task<GoodsReceiptListResponse> GetAllAsync(GoodsReceiptFilterDto filter, long branchId)
         {
-            var paged = await PaginationHelper.GetPagedAsync(
-                (skip, take) => _repository.GetAllAsync(skip, take, branchId),
-                () => _repository.CountAsync(branchId),
-                page, count);
+            var query = _repository.GetQuery()
+                .FilterByBranch(branchId)
+                .FilterByKeyword(filter.Keyword)
+                .FilterByDate(filter.FromDate, filter.ToDate)
+                .FilterBySupplier(filter.SupplierID)
+                .FilterByAmount(filter.MinTotalAmount, filter.MaxTotalAmount)
+                .ApplySort(filter.SortBy, filter.IsDescending);
+
+            var paged = await query.ToPagedResultAsync(filter);
 
             return new GoodsReceiptListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                GoodsReceipts = paged.Items.ToResponseList()
+                GoodsReceipts = paged.Items.Select(gr => new GoodsReceiptResponse
+                {
+                    GoodsReceiptID = gr.GoodsReceiptID,
+                    ReceiptNumber = gr.ReceiptNumber,
+                    SupplierName = gr.Supplier != null ? gr.Supplier.SupplierName : string.Empty,
+                    UserName = gr.User != null ? gr.User.FullName : string.Empty,
+                    ReceiptDate = gr.ReceiptDate,
+                    TotalAmount = gr.TotalAmount,
+                    PaidAmount = gr.PaidAmount,
+                    Note = gr.Note
+                }).ToList()
             };
         }
     }

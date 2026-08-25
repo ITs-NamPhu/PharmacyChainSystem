@@ -4,6 +4,8 @@ namespace PharmacyManagement.Repositories.Interfaces
 {
     public interface IGoodsReceiptRepository
     {
+        IQueryable<GoodsReceipt> GetQuery();
+
         Task<GoodsReceipt?> GetByIdAsync(long id);
         Task<List<GoodsReceipt>> GetAllAsync(int skip, int take, long branchId);
         Task<int> CountAsync(long branchId);

@@ -1,5 +1,7 @@
+using PharmacyManagement.DTOs.Batch;
 using PharmacyManagement.DTOs.Warehouse;
 using PharmacyManagement.Exceptions;
+using PharmacyManagement.Extensions;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
@@ -94,12 +96,16 @@ namespace PharmacyManagement.Services.Implements
             return entity?.ToResponse();
         }
 
-        public async Task<WarehouseBatchListResponse> GetBatchesByWarehouseAsync(long warehouseId, int page, int count)
+        public async Task<WarehouseBatchListResponse> GetBatchesAsync(BatchFilterDto filter, long branchId)
         {
-            var paged = await PaginationHelper.GetPagedAsync(
-                (skip, take) => _repository.GetBatchesByWarehouseAsync(warehouseId, skip, take),
-                () => _repository.CountBatchesByWarehouseAsync(warehouseId),
-                page, count);
+            var query = _repository.GetBatchQuery()
+                .FilterByBranch(branchId)
+                .FilterByWarehouse(filter.WarehouseID)
+                .FilterByExpiryStatus(filter.ExpiryStatus)
+                .FilterByKeyword(filter.Keyword)
+                .ApplySort(filter.SortBy, filter.IsDescending);
+
+            var paged = await query.ToPagedResultAsync(filter);
 
             return new WarehouseBatchListResponse
             {
@@ -108,10 +114,11 @@ namespace PharmacyManagement.Services.Implements
                 Batches = paged.Items.Select(b => new WarehouseBatchResponse
                 {
                     BatchID = b.BatchID,
-                    MedicineID = b.GoodsReceiptItem!.MedicineID,
-                    MedicineName = b.GoodsReceiptItem.Medicine!.MedicineName,
-                    UnitName = b.GoodsReceiptItem.UnitName,
-                    UnitCost = b.GoodsReceiptItem.UnitCost,
+                    MedicineID = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.MedicineID : 0,
+                    MedicineName = b.GoodsReceiptItem != null && b.GoodsReceiptItem.Medicine != null
+                        ? b.GoodsReceiptItem.Medicine.MedicineName : string.Empty,
+                    UnitName = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.UnitName : string.Empty,
+                    UnitCost = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.UnitCost : 0,
                     QuantityReceived = b.QuantityReceived,
                     QuantityInStock = b.QuantityInStock,
                     ManufactureDate = b.ManufactureDate,

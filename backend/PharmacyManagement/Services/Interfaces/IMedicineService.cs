@@ -8,7 +8,7 @@ namespace PharmacyManagement.Services.Interfaces
         Task<MedicineResponse> UpdateAsync(long id, UpdateMedicineRequest request);
         Task DeleteAsync(long id);
         Task<MedicineResponse?> GetByIdAsync(long id);
-        Task<MedicineListResponse> GetAllAsync(int page, int count);
+        Task<MedicineListResponse> GetAllAsync(MedicineFilterDto filter, long branchId);
         Task<List<MedicineResponse>> GetAllMedicineAsync();
     }
 }

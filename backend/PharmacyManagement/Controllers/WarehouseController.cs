@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PharmacyManagement.DTOs.Batch;
 using PharmacyManagement.DTOs.Warehouse;
 using PharmacyManagement.Exceptions;
 using PharmacyManagement.Services.Interfaces;
@@ -69,14 +70,10 @@ namespace PharmacyManagement.Controllers
 
         [HttpGet("batches")]
         [HasPermission("WAREHOUSE_VIEW")]
-        public async Task<IActionResult> GetBatches(int page, int count = 10)
+        public async Task<IActionResult> GetBatches([FromQuery] BatchFilterDto filter)
         {
             var branchId = GetBranchIdFromHeader();
-            var warehouse = await _service.GetByBranchIdAsync(branchId);
-            if (warehouse == null)
-                throw new BusinessException("No warehouse found for this branch.", "WH005", StatusCodes.Status404NotFound);
-
-            var result = await _service.GetBatchesByWarehouseAsync(warehouse.WarehouseID, page, count);
+            var result = await _service.GetBatchesAsync(filter ?? new BatchFilterDto(), branchId);
             return Success(result, "Get warehouse batches successfully.");
         }
     }

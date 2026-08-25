@@ -51,9 +51,10 @@ namespace PharmacyManagement.Controllers
 
         [HttpGet("GetAll")]
         [HasPermission("MEDICINE_VIEW")]
-        public async Task<IActionResult> GetAll(int page, int count = 10)
+        public async Task<IActionResult> GetAll([FromQuery] MedicineFilterDto filter)
         {
-            var result = await _service.GetAllAsync(page, count);
+            var branchId = GetBranchIdFromHeader();
+            var result = await _service.GetAllAsync(filter ?? new MedicineFilterDto(), branchId);
             return Success(result, "Get medicines successfully.");
         }
 

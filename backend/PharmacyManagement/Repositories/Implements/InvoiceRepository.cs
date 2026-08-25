@@ -15,6 +15,11 @@ namespace PharmacyManagement.Repositories.Implements
             _context = context;
         }
 
+        public IQueryable<Invoice> GetQuery()
+        {
+            return _context.Invoice.AsNoTracking();
+        }
+
         public async Task<Invoice?> GetByIdAsync(long id)
         {
             return await _context.Invoice

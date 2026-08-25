@@ -88,5 +88,10 @@ namespace PharmacyManagement.Repositories.Implements
                 .Where(b => b.WarehouseID == warehouseId)
                 .CountAsync();
         }
+
+        public IQueryable<Batch> GetBatchQuery()
+        {
+            return _context.Batch.AsNoTracking();
+        }
     }
 }

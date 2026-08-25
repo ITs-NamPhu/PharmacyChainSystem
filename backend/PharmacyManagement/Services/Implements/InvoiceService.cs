@@ -3,6 +3,7 @@ using PharmacyManagement.DTOs.InvoiceItem;
 using PharmacyManagement.DTOs.Batch;
 using PharmacyManagement.DTOs.UserByBranch;
 using PharmacyManagement.Exceptions;
+using PharmacyManagement.Extensions;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Models;
 using PharmacyManagement.Repositories.Interfaces;
@@ -306,18 +307,32 @@ namespace PharmacyManagement.Services.Implements
             return invoice.ToDetailResponse();
         }
 
-        public async Task<InvoiceListResponse> GetAllAsync(int page, int count, long branchId)
+        public async Task<InvoiceListResponse> GetAllAsync(InvoiceFilterDto filter, long branchId)
         {
-            var paged = await PaginationHelper.GetPagedAsync(
-                (skip, take) => _repository.GetAllAsync(skip, take, branchId),
-                () => _repository.CountAsync(branchId),
-                page, count);
+            var query = _repository.GetQuery()
+                .FilterByBranch(branchId)
+                .FilterByKeyword(filter.Keyword)
+                .FilterByDate(filter.FromDate, filter.ToDate)
+                .FilterByCustomer(filter.CustomerID)
+                .FilterByUser(filter.UserID)
+                .FilterByAmount(filter.MinTotalAmount, filter.MaxTotalAmount)
+                .ApplySort(filter.SortBy, filter.IsDescending);
+
+            var paged = await query.ToPagedResultAsync(filter);
 
             return new InvoiceListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                Invoices = paged.Items.ToResponseList()
+                Invoices = paged.Items.Select(i => new InvoiceResponse
+                {
+                    InvoiceID = i.InvoiceID,
+                    CustomerName = i.Customer != null ? i.Customer.CustomerName : string.Empty,
+                    TotalAmount = i.TotalAmount,
+                    PaidAmount = i.PaidAmount,
+                    CreatedAt = i.CreatedAt,
+                    UserName = i.User != null ? i.User.FullName : string.Empty
+                }).ToList()
             };
         }
 

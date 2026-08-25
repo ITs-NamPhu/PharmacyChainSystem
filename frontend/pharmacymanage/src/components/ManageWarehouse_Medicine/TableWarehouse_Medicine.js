@@ -19,6 +19,24 @@ const TableWarehouse_Medicine = (props) => {
         return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
     }
 
+    const formatExpiryBadge = (dateStr) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        const now = new Date();
+        const months = (d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth();
+        let className = "badge ";
+        if (months < 0 || (months === 0 && d.getDate() < now.getDate())) {
+            className += "bg-danger";
+        } else if (months <= 3) {
+            className += "bg-warning text-dark";
+        } else if (months <= 6) {
+            className += "bg-info text-dark";
+        } else {
+            className += "bg-success";
+        }
+        return <span className={className}>{d.toLocaleDateString("vi-VN")}</span>;
+    };
+
     return (
         <>
             <table className="table table-hover table-bordered">
@@ -48,7 +66,7 @@ const TableWarehouse_Medicine = (props) => {
                                     <td>{value.quantityReceived}</td>
                                     <td>{value.quantityInStock}</td>
                                     <td>{formatDate(value.manufactureDate)}</td>
-                                    <td>{formatDate(value.expiryDate)}</td>
+                                    <td>{formatExpiryBadge(value.expiryDate)}</td>
                                     <td>{value.note}</td>
                                 </tr>
                             )

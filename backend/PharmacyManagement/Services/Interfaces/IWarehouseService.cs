@@ -1,3 +1,4 @@
+using PharmacyManagement.DTOs.Batch;
 using PharmacyManagement.DTOs.Warehouse;
 
 namespace PharmacyManagement.Services.Interfaces
@@ -11,6 +12,6 @@ namespace PharmacyManagement.Services.Interfaces
         Task<WarehouseListResponse> GetAllAsync(int page, int count);
         Task<WarehouseListResponse> GetByBranchAsync(long branchId, int page, int count);
         Task<WarehouseResponse?> GetByBranchIdAsync(long branchId);
-        Task<WarehouseBatchListResponse> GetBatchesByWarehouseAsync(long warehouseId, int page, int count);
+        Task<WarehouseBatchListResponse> GetBatchesAsync(BatchFilterDto filter, long branchId);
     }
 }

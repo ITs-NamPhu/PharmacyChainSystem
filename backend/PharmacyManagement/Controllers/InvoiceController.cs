@@ -69,10 +69,10 @@ namespace PharmacyManagement.Controllers
 
         [HttpGet("GetAll")]
         [HasPermission("INVOICE_VIEW")]
-        public async Task<IActionResult> GetAll(int page, int count = 10)
+        public async Task<IActionResult> GetAll([FromQuery] InvoiceFilterDto filter)
         {
             var branchId = GetBranchIdFromHeader();
-            var result = await _service.GetAllAsync(page, count, branchId);
+            var result = await _service.GetAllAsync(filter ?? new InvoiceFilterDto(), branchId);
             return Success(result, "Get invoices successfully.");
         }
 

@@ -18,5 +18,7 @@ namespace PharmacyManagement.Repositories.Interfaces
 
         Task<List<Batch>> GetBatchesByWarehouseAsync(long warehouseId, int skip, int take);
         Task<int> CountBatchesByWarehouseAsync(long warehouseId);
+
+        IQueryable<Batch> GetBatchQuery();
     }
 }

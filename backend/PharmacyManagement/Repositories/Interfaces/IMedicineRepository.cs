@@ -4,6 +4,8 @@ namespace PharmacyManagement.Repositories.Interfaces
 {
     public interface IMedicineRepository
     {
+        IQueryable<Models.Medicine> GetQuery();
+
         Task<bool> IsMedicineNameExistAsync(string medicineName);
         Task<bool> IsExistsAsync(long id);
         Task<bool> IsCategoryExistsAsync(long categoryId);

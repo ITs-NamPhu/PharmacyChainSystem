@@ -13,5 +13,6 @@ namespace PharmacyManagement.DTOs.Medicine
         public string? ManufacturerName { get; set; }
         public long BaseUnitID { get; set; }
         public string? UnitName { get; set; }
+        public decimal TotalStock { get; set; }
     }
 }

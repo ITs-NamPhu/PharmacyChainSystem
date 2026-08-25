@@ -508,6 +508,77 @@ const ApproveDestroyReceipt = (destroyReceiptID) => {
     return instance.post(`api/DestroyReceipt/${destroyReceiptID}/approve`)
 }
 
+const cleanFilterParams = (params) => {
+    const result = {};
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== null && value !== undefined && value !== '' && value !== 'All' && value !== 0) {
+            result[key] = value;
+        }
+    }
+    return result;
+};
+
+const getMedicineFiltered = (filters) => {
+    const params = cleanFilterParams({
+        Keyword: filters.keyword,
+        PageNumber: filters.pageNumber,
+        PageSize: filters.pageSize,
+        SortBy: filters.sortBy,
+        IsDescending: filters.isDescending,
+        CategoryID: filters.categoryID,
+        ManufacturerID: filters.manufacturerID,
+        StockStatus: filters.stockStatus,
+        StockThreshold: filters.stockThreshold,
+    });
+    return instance.get(`api/Medicine/GetAll`, { params });
+};
+
+const getBatchFiltered = (filters) => {
+    const params = cleanFilterParams({
+        Keyword: filters.keyword,
+        PageNumber: filters.pageNumber,
+        PageSize: filters.pageSize,
+        SortBy: filters.sortBy,
+        IsDescending: filters.isDescending,
+        ExpiryStatus: filters.expiryStatus,
+        WarehouseID: filters.warehouseID,
+    });
+    return instance.get(`api/Warehouse/batches`, { params });
+};
+
+const getInvoiceFiltered = (filters) => {
+    const params = cleanFilterParams({
+        Keyword: filters.keyword,
+        PageNumber: filters.pageNumber,
+        PageSize: filters.pageSize,
+        SortBy: filters.sortBy,
+        IsDescending: filters.isDescending,
+        FromDate: filters.fromDate,
+        ToDate: filters.toDate,
+        CustomerID: filters.customerID,
+        UserID: filters.userID,
+        MinTotalAmount: filters.minTotalAmount,
+        MaxTotalAmount: filters.maxTotalAmount,
+    });
+    return instance.get(`api/Invoice/GetAll`, { params });
+};
+
+const getGoodsReceiptFiltered = (filters) => {
+    const params = cleanFilterParams({
+        Keyword: filters.keyword,
+        PageNumber: filters.pageNumber,
+        PageSize: filters.pageSize,
+        SortBy: filters.sortBy,
+        IsDescending: filters.isDescending,
+        FromDate: filters.fromDate,
+        ToDate: filters.toDate,
+        SupplierID: filters.supplierID,
+        MinTotalAmount: filters.minTotalAmount,
+        MaxTotalAmount: filters.maxTotalAmount,
+    });
+    return instance.get(`api/GoodsReceipt/GetAll`, { params });
+};
+
 export {
     postLogin, Logout, postRefreshToken,
     getAllRole, getAllBranch, putAssign_RoleBranch,
@@ -544,6 +615,8 @@ export {
     getShiftRevenue, getShiftOrders,
     getPromotions, getCounterAlerts,
 
+
+    getMedicineFiltered, getBatchFiltered, getInvoiceFiltered, getGoodsReceiptFiltered,
 
     getAllStockTakePag, GetStockTakeById, CreateStockTake, CompleteStockTake, CancelStockTake, ApproveStockTake,
 

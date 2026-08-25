@@ -1,5 +1,6 @@
 using PharmacyManagement.DTOs.Medicine;
 using PharmacyManagement.Exceptions;
+using PharmacyManagement.Extensions;
 using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
@@ -12,11 +13,16 @@ namespace PharmacyManagement.Services.Implements
     public class MedicineService : IMedicineService
     {
         private readonly IMedicineRepository _repository;
+        private readonly IWarehouseRepository _warehouseRepository;
         private readonly MedicineBusinessValidator _businessValidator;
 
-        public MedicineService(IMedicineRepository repository, MedicineBusinessValidator businessValidator)
+        public MedicineService(
+            IMedicineRepository repository,
+            IWarehouseRepository warehouseRepository,
+            MedicineBusinessValidator businessValidator)
         {
             _repository = repository;
+            _warehouseRepository = warehouseRepository;
             _businessValidator = businessValidator;
         }
 
@@ -70,16 +76,41 @@ namespace PharmacyManagement.Services.Implements
             return entity?.ToResponse();
         }
 
-        public async Task<MedicineListResponse> GetAllAsync(int page, int count)
+        public async Task<MedicineListResponse> GetAllAsync(MedicineFilterDto filter, long branchId)
         {
-            var paged = await PaginationHelper.GetPagedAsync(
-                _repository.GetAllAsync, _repository.CountAsync, page, count);
+            var threshold = filter.StockThreshold ?? 10m;
+
+            var query = _repository.GetQuery()
+                .AttachStock(_warehouseRepository.GetBatchQuery(), branchId)
+                .FilterByKeyword(filter.Keyword)
+                .FilterByCategory(filter.CategoryID)
+                .FilterByManufacturer(filter.ManufacturerID)
+                .FilterByStockStatus(filter.StockStatus, threshold)
+                .ApplySort(filter.SortBy, filter.IsDescending);
+
+            var paged = await query.ToPagedResultAsync(filter);
 
             return new MedicineListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                Medicines = paged.Items.ToResponseList()
+                Medicines = paged.Items.Select(w => new MedicineResponse
+                {
+                    MedicineID = w.Medicine.MedicineID,
+                    MedicineName = w.Medicine.MedicineName,
+                    DefaultRetailPrice = w.Medicine.DefaultRetailPrice,
+                    DefaultWholesalePrice = w.Medicine.DefaultWholesalePrice,
+                    VATPercent = w.Medicine.VATPercent,
+                    CategoryID = w.Medicine.CategoryID,
+                    CategoryName = w.Medicine.MedicineCategory != null
+                        ? w.Medicine.MedicineCategory.CategoryName : null,
+                    ManufacturerID = w.Medicine.ManufacturerID,
+                    ManufacturerName = w.Medicine.ManuFacturer != null
+                        ? w.Medicine.ManuFacturer.ManufacturerName : null,
+                    BaseUnitID = w.Medicine.BaseUnitID,
+                    UnitName = w.Medicine.Unit != null ? w.Medicine.Unit.UnitName : null,
+                    TotalStock = w.TotalStock
+                }).ToList()
             };
         }
 

@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace PharmacyManagement.share
 {
     public class PagedResult<T>
@@ -33,6 +35,24 @@ namespace PharmacyManagement.share
                 Items = items,
                 NumRecords = numRecords,
                 TotalPage = GetTotalPage(numRecords, count)
+            };
+        }
+
+        public static async Task<PagedResult<TEntity>> ToPagedResultAsync<TEntity>(
+            this IQueryable<TEntity> query, BaseFilterDto filter)
+        {
+            int numRecords = await query.CountAsync();
+
+            List<TEntity> items = await query
+                .Skip(GetSkip(filter.PageNumber, filter.PageSize))
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TEntity>
+            {
+                Items = items,
+                NumRecords = numRecords,
+                TotalPage = GetTotalPage(numRecords, filter.PageSize)
             };
         }
     }

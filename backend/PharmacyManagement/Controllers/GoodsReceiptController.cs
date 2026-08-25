@@ -57,10 +57,10 @@ namespace PharmacyManagement.Controllers
 
         [HttpGet("GetAll")]
         [HasPermission("GOODS_RECEIPT_VIEW")]
-        public async Task<IActionResult> GetAll(int page, int count = 10)
+        public async Task<IActionResult> GetAll([FromQuery] GoodsReceiptFilterDto filter)
         {
             var branchId = GetBranchIdFromHeader();
-            var result = await _service.GetAllAsync(page, count, branchId);
+            var result = await _service.GetAllAsync(filter ?? new GoodsReceiptFilterDto(), branchId);
             return Success(result, "Get goods receipts successfully.");
         }
     }

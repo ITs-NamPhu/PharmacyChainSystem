@@ -13,6 +13,12 @@ const TableMedicine = (props) => {
         return new Intl.NumberFormat('vi-VN').format(price);
     };
 
+    const formatStockBadge = (stock) => {
+        if (stock <= 0) return <span className="badge bg-danger">Hết</span>;
+        if (stock <= 10) return <span className="badge bg-warning text-dark">{stock}</span>;
+        return <span className="badge bg-success">{stock}</span>;
+    };
+
     return (
         <>
             <table className="table table-hover table-bordered">
@@ -20,6 +26,7 @@ const TableMedicine = (props) => {
                     <tr scope="col">
                         <td>ID</td>
                         <td>Tên thuốc</td>
+                        <td>Tồn kho</td>
                         <td>Giá bán lẻ</td>
                         <td>Giá bán sỉ</td>
                         <td>VAT %</td>
@@ -36,6 +43,7 @@ const TableMedicine = (props) => {
                                 <tr key={`table-medicine-${index}`}>
                                     <td>{value.medicineID}</td>
                                     <td>{value.medicineName}</td>
+                                    <td>{formatStockBadge(value.totalStock)}</td>
                                     <td>{formatPrice(value.defaultRetailPrice)}</td>
                                     <td>{formatPrice(value.defaultWholesalePrice)}</td>
                                     <td>{value.vatPercent}</td>
@@ -53,7 +61,7 @@ const TableMedicine = (props) => {
                     }
                     {listMedicine && listMedicine.length === 0 &&
                         <tr>
-                            <td colSpan={9}>"Not found medicine"</td>
+                            <td colSpan={10}>Không tìm thấy thuốc</td>
                         </tr>
                     }
                 </tbody>

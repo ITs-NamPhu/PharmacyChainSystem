@@ -13,6 +13,11 @@ namespace PharmacyManagement.Repositories.Implements
             _context = context;
         }
 
+        public IQueryable<Models.Medicine> GetQuery()
+        {
+            return _context.Medicine.AsNoTracking();
+        }
+
         public async Task<bool> IsMedicineNameExistAsync(string medicineName)
         {
             return await _context.Medicine.AnyAsync(x => x.MedicineName == medicineName);

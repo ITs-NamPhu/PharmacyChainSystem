@@ -169,6 +169,18 @@ namespace PharmacyManagement.Models
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => new { i.BranchID, i.CreatedAt })
+                .HasDatabaseName("IX_Invoice_BranchID_CreatedAt");
+
+            modelBuilder.Entity<GoodsReceipt>()
+                .HasIndex(gr => new { gr.BranchID, gr.ReceiptDate })
+                .HasDatabaseName("IX_GoodsReceipt_BranchID_ReceiptDate");
+
+            modelBuilder.Entity<Batch>()
+                .HasIndex(b => b.ExpiryDate)
+                .HasDatabaseName("IX_Batch_ExpiryDate");
+
             // Global Query Filter: loại bỏ các bản ghi đã bị xóa mềm (IsDeleted = true)
             modelBuilder.Entity<Customer>().HasQueryFilter(p => !p.IsDeleted);
             modelBuilder.Entity<ManuFacturer>().HasQueryFilter(p => !p.IsDeleted);
