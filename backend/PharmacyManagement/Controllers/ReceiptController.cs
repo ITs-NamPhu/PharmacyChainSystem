@@ -1,0 +1,44 @@
+using Microsoft.AspNetCore.Mvc;
+using PharmacyManagement.DTOs.Receipt;
+using PharmacyManagement.Services.Interfaces;
+using PharmacyManagement.Validators.PermissionHandle;
+
+namespace PharmacyManagement.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ReceiptController : BaseController
+    {
+        private readonly IReceiptService _service;
+
+        public ReceiptController(IReceiptService service)
+        {
+            _service = service;
+        }
+
+        [HttpPost]
+        [HasPermission("RECEIPT_CREATE")]
+        public async Task<IActionResult> Create(CreateReceiptRequest request)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.CreateAsync(request, userId);
+            return Success(result, "Create receipt successfully.");
+        }
+
+        [HttpGet("{id}")]
+        [HasPermission("RECEIPT_VIEW")]
+        public async Task<IActionResult> GetById(long id)
+        {
+            var result = await _service.GetByIdAsync(id);
+            return Success(result, "Get receipt successfully.");
+        }
+
+        [HttpGet]
+        [HasPermission("RECEIPT_VIEW")]
+        public async Task<IActionResult> GetAll(long? customerId, int page = 1, int count = 10)
+        {
+            var result = await _service.GetAllAsync(customerId, page, count);
+            return Success(result, "Get receipts successfully.");
+        }
+    }
+}

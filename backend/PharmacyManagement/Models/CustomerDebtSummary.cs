@@ -1,15 +1,11 @@
-﻿using Microsoft.CodeAnalysis;
-using System.Numerics;
-
-namespace PharmacyManagement.Models
+﻿namespace PharmacyManagement.Models
 {
-
-	public class CustomerDebtSummary
+    public class CustomerDebtSummary
     {
-		public long CustomerDebtSummaryID { get; set; }
+        public long CustomerDebtSummaryID { get; set; }
 
-        public DateTime Year { get; set; }
-        public DateTime Month { get; set; }
+        public int Year { get; set; }
+        public int Month { get; set; }
 
         public decimal OpeningBalance { get; set; }
         public decimal Increase { get; set; }

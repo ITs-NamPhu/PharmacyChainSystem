@@ -17,6 +17,9 @@ namespace PharmacyManagement.Models
         [StringLength(255)]
         public String? Address { get; set; }
 
+        [StringLength(255)]
+        public String? Email { get; set; }
+
         public long CustomerTypeID { get; set; }
 
         public CustomerType? CustomerType { get; set; }

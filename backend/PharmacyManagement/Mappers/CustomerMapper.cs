@@ -12,6 +12,7 @@ namespace PharmacyManagement.Mappers
                 CustomerName = request.CustomerName,
                 Phone = request.Phone,
                 Address = request.Address,
+                Email = request.Email,
                 CustomerTypeID = request.CustomerTypeID
             };
         }
@@ -21,6 +22,7 @@ namespace PharmacyManagement.Mappers
             entity.CustomerName = request.CustomerName;
             entity.Phone = request.Phone;
             entity.Address = request.Address;
+            entity.Email = request.Email;
             entity.CustomerTypeID = request.CustomerTypeID;
         }
 
@@ -32,6 +34,7 @@ namespace PharmacyManagement.Mappers
                 CustomerName = entity.CustomerName,
                 Phone = entity.Phone ?? "",
                 Address = entity.Address ?? "",
+                Email = entity.Email ?? "",
                 CustomerTypeID = entity.CustomerTypeID,
                 CustomerTypeName = entity.CustomerType?.TypeName
             };
