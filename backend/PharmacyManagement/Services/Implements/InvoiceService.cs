@@ -318,21 +318,23 @@ namespace PharmacyManagement.Services.Implements
                 .FilterByAmount(filter.MinTotalAmount, filter.MaxTotalAmount)
                 .ApplySort(filter.SortBy, filter.IsDescending);
 
-            var paged = await query.ToPagedResultAsync(filter);
+            var projectedQuery = query.Select(i => new InvoiceResponse
+            {
+                InvoiceID = i.InvoiceID,
+                CustomerName = i.Customer != null ? i.Customer.CustomerName : string.Empty,
+                TotalAmount = i.TotalAmount,
+                PaidAmount = i.PaidAmount,
+                CreatedAt = i.CreatedAt,
+                UserName = i.User != null ? i.User.FullName : string.Empty
+            });
+
+            var paged = await projectedQuery.ToPagedResultAsync(filter);
 
             return new InvoiceListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                Invoices = paged.Items.Select(i => new InvoiceResponse
-                {
-                    InvoiceID = i.InvoiceID,
-                    CustomerName = i.Customer != null ? i.Customer.CustomerName : string.Empty,
-                    TotalAmount = i.TotalAmount,
-                    PaidAmount = i.PaidAmount,
-                    CreatedAt = i.CreatedAt,
-                    UserName = i.User != null ? i.User.FullName : string.Empty
-                }).ToList()
+                Invoices = paged.Items
             };
         }
 

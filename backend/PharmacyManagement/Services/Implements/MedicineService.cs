@@ -88,29 +88,31 @@ namespace PharmacyManagement.Services.Implements
                 .FilterByStockStatus(filter.StockStatus, threshold)
                 .ApplySort(filter.SortBy, filter.IsDescending);
 
-            var paged = await query.ToPagedResultAsync(filter);
+            var projectedQuery = query.Select(w => new MedicineResponse
+            {
+                MedicineID = w.Medicine.MedicineID,
+                MedicineName = w.Medicine.MedicineName,
+                DefaultRetailPrice = w.Medicine.DefaultRetailPrice,
+                DefaultWholesalePrice = w.Medicine.DefaultWholesalePrice,
+                VATPercent = w.Medicine.VATPercent,
+                CategoryID = w.Medicine.CategoryID,
+                CategoryName = w.Medicine.MedicineCategory != null
+                    ? w.Medicine.MedicineCategory.CategoryName : null,
+                ManufacturerID = w.Medicine.ManufacturerID,
+                ManufacturerName = w.Medicine.ManuFacturer != null
+                    ? w.Medicine.ManuFacturer.ManufacturerName : null,
+                BaseUnitID = w.Medicine.BaseUnitID,
+                UnitName = w.Medicine.Unit != null ? w.Medicine.Unit.UnitName : null,
+                TotalStock = w.TotalStock
+            });
+
+            var paged = await projectedQuery.ToPagedResultAsync(filter);
 
             return new MedicineListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                Medicines = paged.Items.Select(w => new MedicineResponse
-                {
-                    MedicineID = w.Medicine.MedicineID,
-                    MedicineName = w.Medicine.MedicineName,
-                    DefaultRetailPrice = w.Medicine.DefaultRetailPrice,
-                    DefaultWholesalePrice = w.Medicine.DefaultWholesalePrice,
-                    VATPercent = w.Medicine.VATPercent,
-                    CategoryID = w.Medicine.CategoryID,
-                    CategoryName = w.Medicine.MedicineCategory != null
-                        ? w.Medicine.MedicineCategory.CategoryName : null,
-                    ManufacturerID = w.Medicine.ManufacturerID,
-                    ManufacturerName = w.Medicine.ManuFacturer != null
-                        ? w.Medicine.ManuFacturer.ManufacturerName : null,
-                    BaseUnitID = w.Medicine.BaseUnitID,
-                    UnitName = w.Medicine.Unit != null ? w.Medicine.Unit.UnitName : null,
-                    TotalStock = w.TotalStock
-                }).ToList()
+                Medicines = paged.Items
             };
         }
 
