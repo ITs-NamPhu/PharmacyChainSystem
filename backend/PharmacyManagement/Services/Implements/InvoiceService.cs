@@ -65,6 +65,7 @@ namespace PharmacyManagement.Services.Implements
                 // sử dụng strategy pattern để chọn batch theo FEFO hoặc Manual,
                 // tạo InvoiceItem và trừ tồn kho (có điều kiện) trong cùng transaction
                 invoice.TotalAmount = await ApplyAllocationsAsync(invoice, preparedItems, request.Mode, branchId);
+                invoice.PaidAmount = request.PaidAmount;
                 await _repository.SaveChangesAsync();
                 await _repository.CommitTransactionAsync();
             }
@@ -114,6 +115,7 @@ namespace PharmacyManagement.Services.Implements
                 }
 
                 invoice.TotalAmount = await ApplyAllocationsAsync(invoice, preparedItems, request.Mode, branchId);
+                invoice.PaidAmount = request.PaidAmount;
                 await _repository.SaveChangesAsync();
                 await _repository.CommitTransactionAsync();
             }
@@ -171,7 +173,6 @@ namespace PharmacyManagement.Services.Implements
         {
             var itemsList = items as IReadOnlyList<IInvoiceItemRequest> ?? items.ToList();
 
-            // nếu mode = select batch sử dụng distinct gây ra lỗi?
             var medicineIds = itemsList.Select(i => i.MedicineID).Distinct().ToList();
             var unitIds = itemsList.Select(i => i.UnitID).Distinct().ToList();
 

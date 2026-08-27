@@ -13,6 +13,7 @@ namespace PharmacyManagement.DTOs.Invoice
         public long CustomerID { get; set; }
         public string? Note { get; set; }
         public long? CreatedByUserID { get; set; }
+        public decimal PaidAmount { get; set; }
         public BatchSelectionMode Mode { get; set; } = BatchSelectionMode.FEFO;
         public List<CreateInvoiceItemRequest> InvoiceItems { get; set; } = new();
     }
@@ -22,6 +23,7 @@ namespace PharmacyManagement.DTOs.Invoice
         public long CustomerID { get; set; }
         public string? Note { get; set; }
         public long? CreatedByUserID { get; set; }
+        public decimal PaidAmount { get; set; }
         public BatchSelectionMode Mode { get; set; } = BatchSelectionMode.FEFO;
         public List<UpdateInvoiceItemRequest> InvoiceItems { get; set; } = new();
     }
