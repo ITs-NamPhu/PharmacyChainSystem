@@ -20,6 +20,7 @@ using PharmacyManagement.Validators.FluentValidation.User;
 using PharmacyManagement.Validators.PermissionHandle;
 using PharmacyManagement.Handlers;
 using Microsoft.AspNetCore.Authorization;
+using Hangfire;
 
 namespace PharmacyManagement
 {
@@ -145,7 +146,7 @@ namespace PharmacyManagement
                                 StatusCode = 403,
                                 EM = "You do not have permission to access this resource.",
                                 DT = null,
-                                EC= -1
+                                EC = -1
                             };
 
                             return context.Response.WriteAsJsonAsync(response);
@@ -180,6 +181,8 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IStockTakeRepository, StockTakeRepository>();
             builder.Services.AddScoped<IStockAdjustmentRepository, StockAdjustmentRepository>();
             builder.Services.AddScoped<IDestroyReceiptRepository, DestroyReceiptRepository>();
+            builder.Services.AddScoped<ICustomerDebtSummaryRepository, CustomerDebtSummaryRepository>();
+            builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 
             // Service
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -204,6 +207,10 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IStockTakeService, StockTakeService>();
             builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
             builder.Services.AddScoped<IDestroyReceiptService, DestroyReceiptService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IDebtSummaryService, DebtSummaryService>();
+            builder.Services.AddScoped<DebtSummaryService>();
+            builder.Services.AddScoped<IReceiptService, ReceiptService>();
 
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
@@ -238,6 +245,10 @@ namespace PharmacyManagement
 
             builder.Services.AddControllers();
 
+            // Hangfire
+            builder.Services.AddHangfire(config =>
+                config.UseSqlServerStorage(builder.Configuration.GetConnectionString("PharSystemConnection")));
+            builder.Services.AddHangfireServer();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -258,6 +269,21 @@ namespace PharmacyManagement
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.UseHangfireDashboard("/hangfire");
+
+            // Job chạy vào lúc 00:01 sáng ngày mùng 1 hàng tháng
+            RecurringJob.AddOrUpdate<DebtSummaryService>(
+                "monthly-debt-closing",
+                service => service.ProcessMonthlyClosingAsync(
+                    DateTime.Now.AddMonths(-1).Year,
+                    DateTime.Now.AddMonths(-1).Month),
+                "1 0 1 * *",
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.Local
+                }
+                );
 
             if (app.Environment.IsEnvironment("Docker"))
             {
