@@ -1,5 +1,6 @@
 using PharmacyManagement.Models;
 using PharmacyManagement.Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace PharmacyManagement.Services.Implements
 {
@@ -7,11 +8,14 @@ namespace PharmacyManagement.Services.Implements
     {
         private readonly ILogger<NotificationService> _logger;
         private readonly IEmailService _emailService;
-
-        public NotificationService(ILogger<NotificationService> logger, IEmailService emailService)
+        private readonly IWebHostEnvironment _env; // lấy đường dẫn thực tế của project
+        private readonly IMemoryCache _cache;
+        public NotificationService(ILogger<NotificationService> logger, IEmailService emailService, IWebHostEnvironment env, IMemoryCache cache)
         {
             _logger = logger;
             _emailService = emailService;
+            _env = env;
+            _cache = cache;
         }
 
 
@@ -49,6 +53,36 @@ namespace PharmacyManagement.Services.Implements
                 "[SMS] To: {Phone} | Body: {Message}",
                 phone, message);
             return Task.CompletedTask;
+        }
+
+        public async Task SendInvoiceCreatedAsync(Invoice invoice, Customer customer)
+        {
+            // Xác định đường dẫn file Template
+            string templatePath = Path.Combine(_env.ContentRootPath, "Templates", "InvoiceCreatedEmail.html");
+
+            string cacheKey = "InvoiceEmailTemplate";
+
+            // Đọc toàn bộ nội dung HTML lên
+            string htmlTemplate = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                // Thiết lập thời gian sống của Cache (Giữ trong 24 tiếng nếu không sử dụng)
+                entry.SlidingExpiration = TimeSpan.FromHours(24);
+
+                string templatePath = Path.Combine(_env.ContentRootPath, "Templates", "InvoiceCreatedEmail.html");
+                return await File.ReadAllTextAsync(templatePath);
+            });
+
+
+            // Nối dữ liệu (Replace)
+            // Hàm Replace tạo ra một chuỗi MỚI, không làm thay đổi nội dung đang lưu trong cache
+            string finalHtml = htmlTemplate
+                        .Replace("{{CustomerName}}", invoice.Customer.CustomerName)
+                        .Replace("{{InvoiceNumber}}", invoice.InvoiceID.ToString())
+                        .Replace("{{CreatedDate}}", invoice.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
+                        .Replace("{{TotalAmount}}", invoice.TotalAmount.ToString("N0"));
+
+            string subject = $"[Nhà Thuốc IT] Hóa đơn điện tử {invoice.InvoiceID} đã được tạo";
+            await _emailService.SendEmailAsync(customer.Email, subject, finalHtml, isHtml: true);
         }
     }
 }

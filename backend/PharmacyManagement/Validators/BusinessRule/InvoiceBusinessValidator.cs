@@ -7,21 +7,25 @@ namespace PharmacyManagement.Validators.BusinessRule
     public class InvoiceBusinessValidator
     {
         private readonly IInvoiceRepository _repository;
+        private readonly ICustomerRepository _customerRepository;
 
-        public InvoiceBusinessValidator(IInvoiceRepository repository)
+        public InvoiceBusinessValidator(IInvoiceRepository repository, ICustomerRepository customerRepository)
         {
             _repository = repository;
+            _customerRepository = customerRepository;
         }
 
-        public async Task ValidateCustomerExistsAsync(long customerId)
+        public async Task<Models.Customer> ValidateCustomerExistsAsync(long customerId)
         {
-            if (!await _repository.IsCustomerExistsAsync(customerId))
+            Models.Customer customer = await _customerRepository.GetByIdAsync(customerId);
+            if (customer == null)
             {
                 throw new BusinessException(
                     "Customer not found.",
                     "INV001",
                     StatusCodes.Status404NotFound);
             }
+            return customer;
         }
 
         public async Task ValidateBatchExistsAsync(long batchId)
