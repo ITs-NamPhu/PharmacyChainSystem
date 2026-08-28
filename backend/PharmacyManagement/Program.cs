@@ -35,6 +35,8 @@ namespace PharmacyManagement
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddMemoryCache();
+
             // Add services to the container.
             builder.Services.AddDbContext<PharmacySystemDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("PharSystemConnection")));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -216,7 +218,7 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IDebtSummaryService, DebtSummaryService>();
             builder.Services.AddScoped<DebtSummaryService>();
             builder.Services.AddScoped<IReceiptService, ReceiptService>();
-            builder.Services.AddScoped<IEmailService, GmailEmailService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
             builder.Services.AddScoped<ManualBatchSelectionStrategy>();

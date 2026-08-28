@@ -12,6 +12,7 @@ using PharmacyManagement.Services.BatchSelection;
 using PharmacyManagement.share;
 using PharmacyManagement.Validators.BusinessRule;
 using Microsoft.AspNetCore.Http;
+using backgroundJob = Hangfire.BackgroundJob;
 
 namespace PharmacyManagement.Services.Implements
 {
@@ -24,7 +25,7 @@ namespace PharmacyManagement.Services.Implements
         private readonly InvoiceBusinessValidator _businessValidator;
         private readonly InvoiceItemBusinessValidator _itemValidator;
         private readonly BatchSelectionStrategyFactory _strategyFactory;
-
+        private readonly INotificationService _notificationService;
         public InvoiceService(
             IInvoiceRepository repository,
             IUserRepository userRepository,
@@ -32,7 +33,9 @@ namespace PharmacyManagement.Services.Implements
             IUnitRepository unitRepository,
             InvoiceBusinessValidator businessValidator,
             InvoiceItemBusinessValidator itemValidator,
-            BatchSelectionStrategyFactory strategyFactory)
+            BatchSelectionStrategyFactory strategyFactory,
+            INotificationService notificationService
+            )
         {
             _repository = repository;
             _userRepository = userRepository;
@@ -41,12 +44,13 @@ namespace PharmacyManagement.Services.Implements
             _businessValidator = businessValidator;
             _itemValidator = itemValidator;
             _strategyFactory = strategyFactory;
+            _notificationService = notificationService;
         }
 
         public async Task<InvoiceResponse> CreateAsync(CreateInvoiceRequest request, long userId, long branchId)
         {
             // Validate customer tồn tại từ request
-            await _businessValidator.ValidateCustomerExistsAsync(request.CustomerID);
+            Customer customer = await _businessValidator.ValidateCustomerExistsAsync(request.CustomerID);
 
             // validate người nhập tồn tại trong chi nhánh
             await ValidateUserInBranchAsync(request.CreatedByUserID, branchId);
@@ -73,6 +77,14 @@ namespace PharmacyManagement.Services.Implements
             {
                 await _repository.RollbackTransactionAsync();
                 throw;
+            }
+
+            // gửi thông báo mua hàng thành công
+            if (customer.Email != null && customer.Email.Contains("@"))
+            {
+                backgroundJob.Enqueue<INotificationService>(
+                    notifier => notifier.SendInvoiceCreatedAsync(invoice, customer)
+                );
             }
 
             var result = await _repository.GetByIdAsync(invoice.InvoiceID);
