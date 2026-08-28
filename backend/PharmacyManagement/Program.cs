@@ -11,15 +11,20 @@ using PharmacyManagement.share;
 using PharmacyManagement.Services.Interfaces;
 using PharmacyManagement.Services.Implements;
 using PharmacyManagement.Services.BatchSelection;
+using PharmacyManagement.Services.Notifications;
 
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Repositories.Implements;
+
 using FluentValidation;
 using PharmacyManagement.Validators.BusinessRule;
 using PharmacyManagement.Validators.FluentValidation.User;
 using PharmacyManagement.Validators.PermissionHandle;
+
 using PharmacyManagement.Handlers;
+
 using Microsoft.AspNetCore.Authorization;
+
 using Hangfire;
 
 namespace PharmacyManagement
@@ -211,7 +216,7 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IDebtSummaryService, DebtSummaryService>();
             builder.Services.AddScoped<DebtSummaryService>();
             builder.Services.AddScoped<IReceiptService, ReceiptService>();
-
+            builder.Services.AddScoped<IEmailService, GmailEmailService>();
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
             builder.Services.AddScoped<ManualBatchSelectionStrategy>();
