@@ -16,6 +16,12 @@ namespace PharmacyManagement.Mappers
             };
         }
 
+        public static void ApplyTo(this UpdateReceiptRequest request, Receipt entity)
+        {
+            entity.CustomerID = request.CustomerID;
+            entity.TotalAmount = request.TotalAmount;
+        }
+
         public static ReceiptResponse ToResponse(this Receipt entity)
         {
             return new ReceiptResponse

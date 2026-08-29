@@ -55,14 +55,11 @@ namespace PharmacyManagement.Services.Implements
             return Task.CompletedTask;
         }
 
-        public async Task SendInvoiceCreatedAsync(Invoice invoice, Customer customer)
+        public async Task SendInvoiceCreatedAsync(string customerName, string customerEmail, long invoiceId, DateTime createdAt, decimal totalAmount)
         {
-            // Xác định đường dẫn file Template
-            string templatePath = Path.Combine(_env.ContentRootPath, "Templates", "InvoiceCreatedEmail.html");
-
             string cacheKey = "InvoiceEmailTemplate";
 
-            // Đọc toàn bộ nội dung HTML lên
+            // Đọc toàn bộ nội dung HTML lên (có cache 24h)
             string htmlTemplate = await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
                 // Thiết lập thời gian sống của Cache (Giữ trong 24 tiếng nếu không sử dụng)
@@ -70,19 +67,44 @@ namespace PharmacyManagement.Services.Implements
 
                 string templatePath = Path.Combine(_env.ContentRootPath, "Templates", "InvoiceCreatedEmail.html");
                 return await File.ReadAllTextAsync(templatePath);
-            });
-
+            }) ?? string.Empty;
 
             // Nối dữ liệu (Replace)
             // Hàm Replace tạo ra một chuỗi MỚI, không làm thay đổi nội dung đang lưu trong cache
             string finalHtml = htmlTemplate
-                        .Replace("{{CustomerName}}", invoice.Customer.CustomerName)
-                        .Replace("{{InvoiceNumber}}", invoice.InvoiceID.ToString())
-                        .Replace("{{CreatedDate}}", invoice.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
-                        .Replace("{{TotalAmount}}", invoice.TotalAmount.ToString("N0"));
+                        .Replace("{{CustomerName}}", customerName)
+                        .Replace("{{InvoiceNumber}}", invoiceId.ToString())
+                        .Replace("{{CreatedDate}}", createdAt.ToString("dd/MM/yyyy HH:mm"))
+                        .Replace("{{TotalAmount}}", totalAmount.ToString("N0"));
 
-            string subject = $"[Nhà Thuốc IT] Hóa đơn điện tử {invoice.InvoiceID} đã được tạo";
-            await _emailService.SendEmailAsync(customer.Email, subject, finalHtml, isHtml: true);
+            string subject = $"[Nhà Thuốc IT] Hóa đơn điện tử {invoiceId} đã được tạo";
+            await _emailService.SendEmailAsync(customerEmail, subject, finalHtml, isHtml: true);
+        }
+
+        public async Task SendReceiptCreatedAsync(string customerName, string customerEmail, long receiptId, DateTime createdDate, decimal totalAmount)
+        {
+            string cacheKey = "ReceiptEmailTemplate";
+
+            // Đọc toàn bộ nội dung HTML lên (có cache 24h)
+            string htmlTemplate = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                // Thiết lập thời gian sống của Cache (Giữ trong 24 tiếng nếu không sử dụng)
+                entry.SlidingExpiration = TimeSpan.FromHours(24);
+
+                string templatePath = Path.Combine(_env.ContentRootPath, "Templates", "ReceiptCreatedEmail.html");
+                return await File.ReadAllTextAsync(templatePath);
+            }) ?? string.Empty;
+
+            // Nối dữ liệu (Replace)
+            // Hàm Replace tạo ra một chuỗi MỚI, không làm thay đổi nội dung đang lưu trong cache
+            string finalHtml = htmlTemplate
+                        .Replace("{{CustomerName}}", customerName)
+                        .Replace("{{ReceiptID}}", receiptId.ToString())
+                        .Replace("{{CreatedDate}}", createdDate.ToString("dd/MM/yyyy HH:mm"))
+                        .Replace("{{TotalAmount}}", totalAmount.ToString("N0"));
+
+            string subject = $"[Nhà Thuốc IT] Phiếu thu {receiptId} đã được tạo";
+            await _emailService.SendEmailAsync(customerEmail, subject, finalHtml, isHtml: true);
         }
     }
 }

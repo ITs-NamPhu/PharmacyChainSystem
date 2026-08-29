@@ -5,16 +5,19 @@ using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
 using PharmacyManagement.share;
+using backgroundJob = Hangfire.BackgroundJob;
 
 namespace PharmacyManagement.Services.Implements
 {
     public class ReceiptService : IReceiptService
     {
         private readonly IReceiptRepository _repository;
+        private readonly INotificationService _notificationService;
 
-        public ReceiptService(IReceiptRepository repository)
+        public ReceiptService(IReceiptRepository repository, INotificationService notificationService)
         {
             _repository = repository;
+            _notificationService = notificationService;
         }
 
         public async Task<ReceiptResponse> CreateAsync(CreateReceiptRequest request, long userId)
@@ -30,7 +33,48 @@ namespace PharmacyManagement.Services.Implements
             await _repository.SaveChangesAsync();
 
             var saved = await _repository.GetByIdAsync(entity.ReceiptID);
+
+            // gửi thông báo phiếu thu đã được tạo thành công
+            if (saved is { Customer: { Email: not null } customer } && customer.Email.Contains("@"))
+            {
+                backgroundJob.Enqueue<INotificationService>(
+                    notifier => notifier.SendReceiptCreatedAsync(
+                        customer.CustomerName, customer.Email, saved.ReceiptID, saved.CreatedDate, saved.TotalAmount)
+                );
+            }
+
             return saved!.ToResponse();
+        }
+
+        public async Task<ReceiptResponse> UpdateAsync(long id, UpdateReceiptRequest request)
+        {
+            if (request.TotalAmount <= 0)
+                throw new BusinessException("TotalAmount must be greater than zero.", "RCP001", StatusCodes.Status400BadRequest);
+
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+                throw new BusinessException("Receipt not found.", "RCP003", StatusCodes.Status404NotFound);
+
+            if (!await _repository.IsCustomerExistsAsync(request.CustomerID))
+                throw new BusinessException("Customer not found.", "RCP002", StatusCodes.Status404NotFound);
+
+            request.ApplyTo(entity);
+            _repository.Update(entity);
+            await _repository.SaveChangesAsync();
+
+            var saved = await _repository.GetByIdAsync(id);
+            return saved!.ToResponse();
+        }
+
+        public async Task DeleteAsync(long id)
+        {
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+                throw new BusinessException("Receipt not found.", "RCP003", StatusCodes.Status404NotFound);
+
+            // HandleSoftDelete() trong DbContext sẽ tự chuyển DELETE thành UPDATE IsDeleted = true
+            _repository.Delete(entity);
+            await _repository.SaveChangesAsync();
         }
 
         public async Task<ReceiptResponse?> GetByIdAsync(long id)

@@ -5,6 +5,7 @@ namespace PharmacyManagement.Services.Interfaces
     public interface INotificationService
     {
         Task SendDebtNotificationAsync(CustomerDebtSummary debt);
-        Task SendInvoiceCreatedAsync(Invoice invoice, Customer customer);
+        Task SendInvoiceCreatedAsync(string customerName, string customerEmail, long invoiceId, DateTime createdAt, decimal totalAmount);
+        Task SendReceiptCreatedAsync(string customerName, string customerEmail, long receiptId, DateTime createdDate, decimal totalAmount);
     }
 }

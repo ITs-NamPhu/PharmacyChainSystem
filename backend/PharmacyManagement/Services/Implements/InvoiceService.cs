@@ -80,10 +80,12 @@ namespace PharmacyManagement.Services.Implements
             }
 
             // gửi thông báo mua hàng thành công
-            if (customer.Email != null && customer.Email.Contains("@"))
+            var email = customer.Email;
+            if (email != null && email.Contains("@"))
             {
                 backgroundJob.Enqueue<INotificationService>(
-                    notifier => notifier.SendInvoiceCreatedAsync(invoice, customer)
+                    notifier => notifier.SendInvoiceCreatedAsync(
+                        customer.CustomerName, email, invoice.InvoiceID, invoice.CreatedAt, invoice.TotalAmount)
                 );
             }
 
