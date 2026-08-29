@@ -13,7 +13,7 @@ namespace PharmacyManagement.Services.Notifications
             _config = config;
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml)
         {
             // Đọc cấu hình từ appsettings
             string host = _config["EmailSettings:Host"]!;
@@ -34,7 +34,7 @@ namespace PharmacyManagement.Services.Notifications
                 From = new MailAddress(fromEmail, displayName),
                 Subject = subject,
                 Body = body,
-                IsBodyHtml = false
+                IsBodyHtml = isHtml
             };
             mailMessage.To.Add(toEmail);
 

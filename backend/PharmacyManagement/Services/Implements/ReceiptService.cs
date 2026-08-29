@@ -5,16 +5,19 @@ using PharmacyManagement.Mappers;
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Services.Interfaces;
 using PharmacyManagement.share;
+using backgroundJob = Hangfire.BackgroundJob;
 
 namespace PharmacyManagement.Services.Implements
 {
     public class ReceiptService : IReceiptService
     {
         private readonly IReceiptRepository _repository;
+        private readonly INotificationService _notificationService;
 
-        public ReceiptService(IReceiptRepository repository)
+        public ReceiptService(IReceiptRepository repository, INotificationService notificationService)
         {
             _repository = repository;
+            _notificationService = notificationService;
         }
 
         public async Task<ReceiptResponse> CreateAsync(CreateReceiptRequest request, long userId)
@@ -30,6 +33,16 @@ namespace PharmacyManagement.Services.Implements
             await _repository.SaveChangesAsync();
 
             var saved = await _repository.GetByIdAsync(entity.ReceiptID);
+
+            // gửi thông báo phiếu thu đã được tạo thành công
+            if (saved is { Customer: { Email: not null } customer } && customer.Email.Contains("@"))
+            {
+                backgroundJob.Enqueue<INotificationService>(
+                    notifier => notifier.SendReceiptCreatedAsync(
+                        customer.CustomerName, customer.Email, saved.ReceiptID, saved.CreatedDate, saved.TotalAmount)
+                );
+            }
+
             return saved!.ToResponse();
         }
 

@@ -1,6 +1,8 @@
-﻿namespace PharmacyManagement.Models
+﻿using PharmacyManagement.share;
+
+namespace PharmacyManagement.Models
 {
-	public class Receipt
+	public class Receipt : ISoftDelete
 	{
 		public long ReceiptID { get; set; }
         public long CustomerID { get; set; }
@@ -10,5 +12,7 @@
 
         public Customer? Customer { get; set; }
         public User? User { get; set; }
+
+        public bool IsDeleted { get; set; }
     }
 }

@@ -189,6 +189,7 @@ namespace PharmacyManagement.Models
             modelBuilder.Entity<User>().HasQueryFilter(p => !p.IsDeleted);
             modelBuilder.Entity<Invoice>().HasQueryFilter(p => !p.IsDeleted);
             modelBuilder.Entity<GoodsReceipt>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Receipt>().HasQueryFilter(p => !p.IsDeleted);
 
         }
 
