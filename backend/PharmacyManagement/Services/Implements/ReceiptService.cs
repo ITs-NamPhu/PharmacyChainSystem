@@ -46,6 +46,37 @@ namespace PharmacyManagement.Services.Implements
             return saved!.ToResponse();
         }
 
+        public async Task<ReceiptResponse> UpdateAsync(long id, UpdateReceiptRequest request)
+        {
+            if (request.TotalAmount <= 0)
+                throw new BusinessException("TotalAmount must be greater than zero.", "RCP001", StatusCodes.Status400BadRequest);
+
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+                throw new BusinessException("Receipt not found.", "RCP003", StatusCodes.Status404NotFound);
+
+            if (!await _repository.IsCustomerExistsAsync(request.CustomerID))
+                throw new BusinessException("Customer not found.", "RCP002", StatusCodes.Status404NotFound);
+
+            request.ApplyTo(entity);
+            _repository.Update(entity);
+            await _repository.SaveChangesAsync();
+
+            var saved = await _repository.GetByIdAsync(id);
+            return saved!.ToResponse();
+        }
+
+        public async Task DeleteAsync(long id)
+        {
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+                throw new BusinessException("Receipt not found.", "RCP003", StatusCodes.Status404NotFound);
+
+            // HandleSoftDelete() trong DbContext sẽ tự chuyển DELETE thành UPDATE IsDeleted = true
+            _repository.Delete(entity);
+            await _repository.SaveChangesAsync();
+        }
+
         public async Task<ReceiptResponse?> GetByIdAsync(long id)
         {
             var entity = await _repository.GetByIdAsync(id);

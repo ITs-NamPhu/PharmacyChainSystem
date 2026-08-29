@@ -23,6 +23,16 @@ namespace PharmacyManagement.Repositories.Implements
             await _context.Receipt.AddAsync(entity);
         }
 
+        public void Update(Receipt entity)
+        {
+            _context.Receipt.Update(entity);
+        }
+
+        public void Delete(Receipt entity)
+        {
+            _context.Receipt.Remove(entity);
+        }
+
         public async Task<Receipt?> GetByIdAsync(long id)
         {
             return await _context.Receipt

@@ -6,6 +6,12 @@ namespace PharmacyManagement.DTOs.Receipt
         public decimal TotalAmount { get; set; }
     }
 
+    public class UpdateReceiptRequest
+    {
+        public long CustomerID { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
+
     public class ReceiptResponse
     {
         public long ReceiptID { get; set; }

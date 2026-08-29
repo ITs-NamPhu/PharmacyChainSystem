@@ -204,6 +204,11 @@ INSERT INTO [Permission] ([Name], [Description]) VALUES
 ('SalesReturn_Create', N'Tao phieu tra hang ban'),
 ('SalesReturn_Update', N'Cap nhat phieu tra hang ban'),
 ('SalesReturn_Delete', N'Xoa phieu tra hang ban'),
+-- Receipt
+('Receipt_View', N'Xem phieu thu'),
+('Receipt_Create', N'Tao phieu thu'),
+('Receipt_Update', N'Cap nhat phieu thu'),
+('Receipt_Delete', N'Xoa phieu thu'),
 -- DestroyReceipt
 ('DestroyReceipt_View', N'Xem phieu tieu huy'),
 ('DestroyReceipt_Create', N'Tao phieu tieu huy'),
@@ -286,6 +291,7 @@ WHERE [Name] LIKE 'Invoice%'
    OR [Name] LIKE 'Customer%'
    OR [Name] LIKE 'CustomerType%'
    OR [Name] LIKE 'SalesReturn%'
+   OR [Name] LIKE 'Receipt%'
    OR [Name] LIKE 'Batch%'
    OR [Name] LIKE 'WareHouse%'
    OR [Name] LIKE 'StockTake%'
@@ -302,6 +308,7 @@ WHERE [Name] LIKE 'Invoice%'
    OR [Name] LIKE 'Customer%'
    OR [Name] LIKE 'CustomerType%'
    OR [Name] LIKE 'SalesReturn%'
+   OR [Name] LIKE 'Receipt%'
    OR [Name] LIKE 'Medicine_View'
    OR [Name] LIKE 'Unit_View'
    OR [Name] LIKE 'Batch_View'
