@@ -63,5 +63,15 @@ namespace PharmacyManagement.Repositories.Implements
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<CustomerWalletHistory>> GetWalletHistoryAsync(long customerId, int skip, int take)
+        {
+            return await _context.CustomerWalletHistory
+                .Where(h => h.CustomerID == customerId)
+                .OrderByDescending(h => h.CreateDate)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+        }
     }
 }

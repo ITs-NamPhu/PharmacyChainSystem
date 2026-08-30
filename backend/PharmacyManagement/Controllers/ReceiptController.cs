@@ -21,7 +21,8 @@ namespace PharmacyManagement.Controllers
         public async Task<IActionResult> Create(CreateReceiptRequest request)
         {
             var userId = GetUserIdFromToken();
-            var result = await _service.CreateAsync(request, userId);
+            var branchId = GetBranchIdFromHeader();
+            var result = await _service.CreateAsync(request, userId, branchId);
             return Success(result, "Create receipt successfully.");
         }
 

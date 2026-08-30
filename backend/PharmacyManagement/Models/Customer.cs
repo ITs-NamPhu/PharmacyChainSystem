@@ -8,6 +8,9 @@ namespace PharmacyManagement.Models
 	{
 		public long CustomerID { get; set; }
 
+        // Số dư ví khách hàng (mặc định 0), dùng để trừ khi khách thanh toán bằng ví
+        public decimal WalletBalance { get; set; }
+
         [StringLength(255)]
         public String CustomerName { get; set; }
 

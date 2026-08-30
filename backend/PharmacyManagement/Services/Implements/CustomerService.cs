@@ -80,5 +80,31 @@ namespace PharmacyManagement.Services.Implements
             var entities = await _repository.GetAllAsync();
             return entities.ToResponseList();
         }
+
+        public async Task<CustomerWalletResponse> GetWalletAsync(long customerId)
+        {
+            var customer = await _repository.GetByIdAsync(customerId);
+            if (customer == null)
+                throw new BusinessException("Customer not found.", "CUST004", StatusCodes.Status404NotFound);
+
+            // Lấy lịch sử gần nhất (20 dòng gần đây nhất của sổ phụ ví)
+            var history = await _repository.GetWalletHistoryAsync(customerId, 0, 20);
+
+            return new CustomerWalletResponse
+            {
+                CustomerID = customer.CustomerID,
+                CustomerName = customer.CustomerName,
+                WalletBalance = customer.WalletBalance,
+                History = history.Select(h => new CustomerWalletHistoryResponse
+                {
+                    CustomerWalletHistoryID = h.CustomerWalletHistoryID,
+                    TransactionType = h.TransactionType,
+                    Amount = h.Amount,
+                    RefType = h.RefType,
+                    RefId = h.RefId,
+                    CreateDate = h.CreateDate
+                }).ToList()
+            };
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace PharmacyManagement.DTOs.Invoice
         public string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public decimal PaidAmount { get; set; }
+        public Models.PaymentStatus PaymentStatus { get; set; }
         public string? Note { get; set; }
         public DateTime CreatedAt { get; set; }
         public string UserName { get; set; } = string.Empty;

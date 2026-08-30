@@ -1,3 +1,4 @@
+using PharmacyManagement.DTOs.Reconciliation;
 using PharmacyManagement.Models;
 using PharmacyManagement.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
@@ -10,12 +11,14 @@ namespace PharmacyManagement.Services.Implements
         private readonly IEmailService _emailService;
         private readonly IWebHostEnvironment _env; // lấy đường dẫn thực tế của project
         private readonly IMemoryCache _cache;
-        public NotificationService(ILogger<NotificationService> logger, IEmailService emailService, IWebHostEnvironment env, IMemoryCache cache)
+        private readonly IConfiguration _config;
+        public NotificationService(ILogger<NotificationService> logger, IEmailService emailService, IWebHostEnvironment env, IMemoryCache cache, IConfiguration config)
         {
             _logger = logger;
             _emailService = emailService;
             _env = env;
             _cache = cache;
+            _config = config;
         }
 
 
@@ -105,6 +108,39 @@ namespace PharmacyManagement.Services.Implements
 
             string subject = $"[Nhà Thuốc IT] Phiếu thu {receiptId} đã được tạo";
             await _emailService.SendEmailAsync(customerEmail, subject, finalHtml, isHtml: true);
+        }
+
+        public async Task SendReconciliationAlertAsync(IReadOnlyList<ReconciliationIssue> issues, DateTime ranAt)
+        {
+            // Đọc danh sách email nhận cảnh báo từ cấu hình appsettings.json
+            var recipients = _config.GetSection("Reconciliation:AlertEmails").Get<List<string>>() ?? new();
+            if (recipients.Count == 0)
+            {
+                _logger.LogWarning("Reconciliation alert not sent: no AlertEmails configured.");
+                return;
+            }
+
+            // Dựng nội dung email: liệt kê từng hóa đơn bị lệch
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"<p>Job đối soát lúc <b>{ranAt:dd/MM/yyyy HH:mm}</b> phát hiện <b>{issues.Count}</b> hóa đơn bị lệch:</p>");
+            sb.AppendLine("<table border='1' cellpadding='6' cellspacing='0' style='border-collapse:collapse'>");
+            sb.AppendLine("<tr><th>InvoiceID</th><th>CustomerID</th><th>Total</th><th>PaidAmount</th><th>Applied</th><th>Trạng thái</th><th>Lý do</th></tr>");
+
+            foreach (var issue in issues)
+            {
+                sb.AppendLine(
+                    $"<tr><td>{issue.InvoiceID}</td><td>{issue.CustomerID}</td>" +
+                    $"<td>{issue.TotalAmount:N0}</td><td>{issue.PaidAmount:N0}</td><td>{issue.AppliedAmount:N0}</td>" +
+                    $"<td>{issue.PaymentStatus}</td><td>{issue.Reason}</td></tr>");
+            }
+            sb.AppendLine("</table>");
+            sb.AppendLine("<p>Vui lòng kiểm tra và đối chiếu trực tiếp ngay.</p>");
+
+            string subject = $"[CẢNH BÁO] Đối soát công nợ: {issues.Count} hóa đơn lệch";
+            foreach (var recipient in recipients)
+            {
+                await _emailService.SendEmailAsync(recipient, subject, sb.ToString(), isHtml: true);
+            }
         }
     }
 }

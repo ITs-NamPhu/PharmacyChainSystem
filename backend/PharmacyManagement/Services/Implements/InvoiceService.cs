@@ -22,6 +22,8 @@ namespace PharmacyManagement.Services.Implements
         private readonly IUserRepository _userRepository;
         private readonly IUnitConversionRepository _unitConversionRepository;
         private readonly IUnitRepository _unitRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IReceiptRepository _receiptRepository;
         private readonly InvoiceBusinessValidator _businessValidator;
         private readonly InvoiceItemBusinessValidator _itemValidator;
         private readonly BatchSelectionStrategyFactory _strategyFactory;
@@ -31,6 +33,8 @@ namespace PharmacyManagement.Services.Implements
             IUserRepository userRepository,
             IUnitConversionRepository unitConversionRepository,
             IUnitRepository unitRepository,
+            ICustomerRepository customerRepository,
+            IReceiptRepository receiptRepository,
             InvoiceBusinessValidator businessValidator,
             InvoiceItemBusinessValidator itemValidator,
             BatchSelectionStrategyFactory strategyFactory,
@@ -41,6 +45,8 @@ namespace PharmacyManagement.Services.Implements
             _userRepository = userRepository;
             _unitConversionRepository = unitConversionRepository;
             _unitRepository = unitRepository;
+            _customerRepository = customerRepository;
+            _receiptRepository = receiptRepository;
             _businessValidator = businessValidator;
             _itemValidator = itemValidator;
             _strategyFactory = strategyFactory;
@@ -69,7 +75,14 @@ namespace PharmacyManagement.Services.Implements
                 // sử dụng strategy pattern để chọn batch theo FEFO hoặc Manual,
                 // tạo InvoiceItem và trừ tồn kho (có điều kiện) trong cùng transaction
                 invoice.TotalAmount = await ApplyAllocationsAsync(invoice, preparedItems, request.Mode, branchId);
-                invoice.PaidAmount = request.PaidAmount;
+
+                // lưu Invoice trước để có được InvoiceID thật
+                // (cần nó để nối phiếu thu / sổ phụ ví vào hóa đơn vừa tạo)
+                await _repository.SaveChangesAsync();
+
+                // áp dụng thanh toán: ví (nếu khách đồng ý) + tiền mặt trả trước
+                await ApplyWalletAndCashPaymentAsync(invoice, customer, request.PaidAmount, request.UseWalletAmount, branchId, userId);
+
                 await _repository.SaveChangesAsync();
                 await _repository.CommitTransactionAsync();
             }
@@ -130,6 +143,13 @@ namespace PharmacyManagement.Services.Implements
 
                 invoice.TotalAmount = await ApplyAllocationsAsync(invoice, preparedItems, request.Mode, branchId);
                 invoice.PaidAmount = request.PaidAmount;
+
+                // cập nhật trạng thái thanh toán theo số tiền đã trả mới nhất
+                invoice.PaymentStatus =
+                    invoice.PaidAmount >= invoice.TotalAmount
+                        ? PaymentStatus.Paid
+                        : PaymentStatus.Debt;
+
                 await _repository.SaveChangesAsync();
                 await _repository.CommitTransactionAsync();
             }
@@ -179,6 +199,80 @@ namespace PharmacyManagement.Services.Implements
             var userBranch = await _userRepository.GetUserBranchAsync(createdByUserID.Value, branchId);
             if (userBranch == null)
                 throw new BusinessException("User not found in this branch.", "INV006", StatusCodes.Status404NotFound);
+        }
+
+        // Áp dụng thanh toán cho hóa đơn vừa tạo (phải gọi sau khi đã biết TotalAmount)
+        private async Task ApplyWalletAndCashPaymentAsync(
+            Invoice invoice, Customer customer,
+            decimal cashPaid, decimal? requestedWalletAmount,
+            long branchId, long userId)
+        {
+            // 1) Thanh toán bằng ví (nếu khách đồng ý dùng số dư trong ví)
+            var credit = Math.Min(
+                Math.Min(requestedWalletAmount ?? 0, customer.WalletBalance),
+                invoice.TotalAmount);
+
+            if (credit > 0)
+            {
+                await _receiptRepository.UpdateCustomerWalletAsync(customer.CustomerID, -credit);
+
+                await _receiptRepository.AddWalletHistoryAsync(new CustomerWalletHistory
+                {
+                    CustomerID = customer.CustomerID,
+                    TransactionType = WalletTransactionType.OUT,
+                    Amount = credit,
+                    RefType = WalletRefType.INVOICE,
+                    RefId = invoice.InvoiceID,
+                    CreateDate = DateTime.Now
+                });
+
+                invoice.PaidAmount += credit;
+
+                // Tạo phiếu thu loại WALLET + 1 dòng gạch nợ cho hóa đơn vừa tạo
+                await _receiptRepository.AddAsync(CreatePaymentReceipt(invoice, credit, PaymentMethod.WALLET, branchId, userId));
+            }
+
+            // 2) Thanh toán bằng tiền mặt (phần còn lại)
+            var remaining = invoice.TotalAmount - credit;
+            if (cashPaid > remaining)
+                throw new BusinessException(
+                    "Cash paid cannot exceed the remaining amount.", "INV013", StatusCodes.Status400BadRequest);
+
+            if (cashPaid > 0)
+            {
+                invoice.PaidAmount += cashPaid;
+
+                // Tạo phiếu thu loại CASH + 1 dòng gạch nợ cho hóa đơn vừa tạo
+                await _receiptRepository.AddAsync(CreatePaymentReceipt(invoice, cashPaid, PaymentMethod.CASH, branchId, userId));
+            }
+
+            // 3) Cập nhật trạng thái thanh toán của hóa đơn
+            invoice.PaymentStatus =
+                invoice.PaidAmount >= invoice.TotalAmount
+                    ? PaymentStatus.Paid
+                    : PaymentStatus.Debt;
+        }
+
+        // Tạo 1 phiếu thu (tự động) kèm 1 dòng gạch nợ cho hóa đơn
+        // Dùng navigation (Invoice = invoice) để EF tự gán InvoiceID sau khi lưu
+        private Receipt CreatePaymentReceipt(Invoice invoice, decimal amount, PaymentMethod method, long branchId, long userId)
+        {
+            var receipt = new Receipt
+            {
+                CustomerID = invoice.CustomerID,
+                BranchID = branchId,
+                UserID = userId,
+                TotalAmount = amount,
+                PaymentMethod = method,
+                CreatedDate = DateTime.Now
+            };
+
+            receipt.ReceiptDetail = new List<ReceiptDetail>
+            {
+                new ReceiptDetail { Invoice = invoice, AmountApplied = amount }
+            };
+
+            return receipt;
         }
 
 

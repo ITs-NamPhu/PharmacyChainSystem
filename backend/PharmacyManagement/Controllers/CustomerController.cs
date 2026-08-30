@@ -64,5 +64,13 @@ namespace PharmacyManagement.Controllers
             var result = await _service.GetAllCustomerAsync();
             return Success(result, "Get all customers successfully.");
         }
+
+        [HttpGet("{id}/Wallet")]
+        [HasPermission("CUSTOMER_VIEW")]
+        public async Task<IActionResult> GetWallet(long id)
+        {
+            var result = await _service.GetWalletAsync(id);
+            return Success(result, "Get customer wallet successfully.");
+        }
     }
 }
