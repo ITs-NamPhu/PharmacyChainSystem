@@ -9,5 +9,8 @@ namespace PharmacyManagement.DTOs.Customer
         public string? Email { get; set; } = "";
         public long CustomerTypeID { get; set; }
         public string? CustomerTypeName { get; set; }
+
+        // Số dư ví khách hàng
+        public decimal WalletBalance { get; set; }
     }
 }

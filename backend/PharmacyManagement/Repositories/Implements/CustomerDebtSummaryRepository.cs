@@ -41,12 +41,16 @@ namespace PharmacyManagement.Repositories.Implements
 
         public async Task<Dictionary<long, decimal>> GetReceiptPaymentsAsync(DateTime startDate, DateTime endDate)
         {
+            // Tổng tiền thực tế gạch nợ của khách trong kỳ.
+            // Dùng SUM(ReceiptDetail.AmountApplied) thay vì SUM(Receipt.TotalAmount)
+            // vì Receipt.TotalAmount có thể gồm cả phần nạp vào ví (tiền thừa).
             return (await _context.Receipt
                 .Where(x => x.CreatedDate >= startDate && x.CreatedDate <= endDate)
-                .Select(x => new { x.CustomerID, x.TotalAmount })
+                .SelectMany(x => x.ReceiptDetail!)
+                .Select(d => new { d.Invoice!.CustomerID, d.AmountApplied })
                 .ToListAsync())
                 .GroupBy(x => x.CustomerID)
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.TotalAmount));
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.AmountApplied));
         }
 
         public async Task AddRangeAsync(IEnumerable<CustomerDebtSummary> summaries)

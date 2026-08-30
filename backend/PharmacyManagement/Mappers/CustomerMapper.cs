@@ -36,7 +36,8 @@ namespace PharmacyManagement.Mappers
                 Address = entity.Address ?? "",
                 Email = entity.Email ?? "",
                 CustomerTypeID = entity.CustomerTypeID,
-                CustomerTypeName = entity.CustomerType?.TypeName
+                CustomerTypeName = entity.CustomerType?.TypeName,
+                WalletBalance = entity.WalletBalance
             };
         }
 

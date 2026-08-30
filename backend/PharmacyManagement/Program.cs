@@ -218,6 +218,7 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IDebtSummaryService, DebtSummaryService>();
             builder.Services.AddScoped<DebtSummaryService>();
             builder.Services.AddScoped<IReceiptService, ReceiptService>();
+            builder.Services.AddScoped<IReconciliationService, ReconciliationService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
@@ -286,6 +287,19 @@ namespace PharmacyManagement
                     DateTime.Now.AddMonths(-1).Year,
                     DateTime.Now.AddMonths(-1).Month),
                 "1 0 1 * *",
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.Local
+                }
+                );
+
+            // Job đối soát chạy lúc 2h sáng mỗi ngày:
+            // so sánh Invoice.PaidAmount với SUM(ReceiptDetail.AmountApplied)
+            // để phát hiện sớm mọi sai lệch do lỗi logic code
+            RecurringJob.AddOrUpdate<IReconciliationService>(
+                "daily-reconciliation",
+                service => service.ReconcileAsync(),
+                "0 2 * * *",
                 new RecurringJobOptions
                 {
                     TimeZone = TimeZoneInfo.Local

@@ -4,7 +4,8 @@ namespace PharmacyManagement.Services.Interfaces
 {
     public interface IReceiptService
     {
-        Task<ReceiptResponse> CreateAsync(CreateReceiptRequest request, long userId);
+        // Tạo phiếu thu gạch nợ theo FIFO cho khách hàng
+        Task<ReceiptResponse> CreateAsync(CreateReceiptRequest request, long userId, long branchId);
         Task<ReceiptResponse> UpdateAsync(long id, UpdateReceiptRequest request);
         Task DeleteAsync(long id);
         Task<ReceiptResponse?> GetByIdAsync(long id);

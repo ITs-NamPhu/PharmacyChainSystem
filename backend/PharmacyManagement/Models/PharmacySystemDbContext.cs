@@ -45,6 +45,8 @@ namespace PharmacyManagement.Models
         public DbSet<SalesReturn> SalesReturn { get; set; }
         public DbSet<SalesReturnItem> SalesReturnItem { get; set; }
         public DbSet<Receipt> Receipt { get; set; }
+        public DbSet<ReceiptDetail> ReceiptDetail { get; set; }
+        public DbSet<CustomerWalletHistory> CustomerWalletHistory { get; set; }
 
         public DbSet<DestroyReceipt> DestroyReceipt { get; set; }
         public DbSet<DestroyReceiptItem> DestroyReceiptItem { get; set; }
@@ -95,6 +97,8 @@ namespace PharmacyManagement.Models
             modelBuilder.Entity<SalesReturn>().ToTable("SalesReturn");
             modelBuilder.Entity<SalesReturnItem>().ToTable("SalesReturnItem");
             modelBuilder.Entity<Receipt>().ToTable("Receipt");
+            modelBuilder.Entity<ReceiptDetail>().ToTable("ReceiptDetail");
+            modelBuilder.Entity<CustomerWalletHistory>().ToTable("CustomerWalletHistory");
 
             modelBuilder.Entity<DestroyReceipt>().ToTable("DestroyReceipt");
             modelBuilder.Entity<DestroyReceiptItem>().ToTable("DestroyReceiptItem");
@@ -172,6 +176,55 @@ namespace PharmacyManagement.Models
             modelBuilder.Entity<Invoice>()
                 .HasIndex(i => new { i.BranchID, i.CreatedAt })
                 .HasDatabaseName("IX_Invoice_BranchID_CreatedAt");
+
+            // Index hỗ trợ truy vấn FIFO: tìm các hóa đơn còn nợ của khách, cũ nhất trước
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => new { i.CustomerID, i.CreatedAt })
+                .HasDatabaseName("IX_Invoice_CustomerID_CreatedAt");
+
+            // Giá trị mặc định: hóa đơn tạo ra luôn ở trạng thái còn nợ
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.PaymentStatus)
+                .HasDefaultValue(PaymentStatus.Debt);
+
+            // Giá trị mặc định: ví khách hàng bắt đầu từ 0
+            modelBuilder.Entity<Customer>()
+                .Property(c => c.WalletBalance)
+                .HasDefaultValue(0m);
+
+            // Quan hệ ReceiptDetail - Receipt / Invoice
+            modelBuilder.Entity<ReceiptDetail>(entity =>
+            {
+                entity.HasOne(e => e.Receipt)
+                    .WithMany(r => r.ReceiptDetail)
+                    .HasForeignKey(e => e.ReceiptID)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Invoice)
+                    .WithMany(i => i.ReceiptDetail)
+                    .HasForeignKey(e => e.InvoiceID)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.ReceiptID).HasDatabaseName("IX_ReceiptDetail_ReceiptID");
+                entity.HasIndex(e => e.InvoiceID).HasDatabaseName("IX_ReceiptDetail_InvoiceID");
+            });
+
+            // Sổ phụ ví khách hàng
+            modelBuilder.Entity<CustomerWalletHistory>(entity =>
+            {
+                entity.HasOne(e => e.Customer)
+                    .WithMany()
+                    .HasForeignKey(e => e.CustomerID)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.CustomerID, e.CreateDate })
+                    .HasDatabaseName("IX_CustomerWalletHistory_CustomerID_CreateDate");
+            });
+
+            // Giá trị mặc định: phiếu thu mặc định là tiền mặt
+            modelBuilder.Entity<Receipt>()
+                .Property(r => r.PaymentMethod)
+                .HasDefaultValue(PaymentMethod.CASH);
 
             modelBuilder.Entity<GoodsReceipt>()
                 .HasIndex(gr => new { gr.BranchID, gr.ReceiptDate })

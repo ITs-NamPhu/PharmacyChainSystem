@@ -55,9 +55,11 @@ namespace PharmacyManagement.Mappers
             return new InvoiceResponse
             {
                 InvoiceID = entity.InvoiceID,
+                CustomerID = entity.CustomerID,
                 CustomerName = entity.Customer?.CustomerName ?? string.Empty,
                 TotalAmount = entity.TotalAmount,
                 PaidAmount = entity.PaidAmount,
+                PaymentStatus = entity.PaymentStatus,
                 CreatedAt = entity.CreatedAt,
                 UserName = entity.User?.FullName ?? string.Empty
             };
@@ -72,6 +74,7 @@ namespace PharmacyManagement.Mappers
                 CustomerName = entity.Customer?.CustomerName ?? string.Empty,
                 TotalAmount = entity.TotalAmount,
                 PaidAmount = entity.PaidAmount,
+                PaymentStatus = entity.PaymentStatus,
                 Note = entity.Note,
                 CreatedAt = entity.CreatedAt,
                 UserName = entity.User?.FullName ?? string.Empty,

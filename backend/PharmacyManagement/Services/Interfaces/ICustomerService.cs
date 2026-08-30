@@ -10,5 +10,8 @@ namespace PharmacyManagement.Services.Interfaces
         Task<CustomerResponse?> GetByIdAsync(long id);
         Task<CustomerListResponse> GetAllAsync(int page, int count);
         Task<List<CustomerResponse>> GetAllCustomerAsync();
+
+        // Lấy số dư ví + lịch sử biến động của khách hàng
+        Task<CustomerWalletResponse> GetWalletAsync(long customerId);
     }
 }
