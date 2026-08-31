@@ -391,23 +391,25 @@ namespace PharmacyManagement.Services.Implements
                 .FilterByAmount(filter.MinTotalAmount, filter.MaxTotalAmount)
                 .ApplySort(filter.SortBy, filter.IsDescending);
 
-            var paged = await query.ToPagedResultAsync(filter);
+            var projectedQuery = query.Select(gr => new GoodsReceiptResponse
+            {
+                GoodsReceiptID = gr.GoodsReceiptID,
+                ReceiptNumber = gr.ReceiptNumber,
+                SupplierName = gr.Supplier != null ? gr.Supplier.SupplierName : string.Empty,
+                UserName = gr.User != null ? gr.User.FullName : string.Empty,
+                ReceiptDate = gr.ReceiptDate,
+                TotalAmount = gr.TotalAmount,
+                PaidAmount = gr.PaidAmount,
+                Note = gr.Note
+            });
+
+            var paged = await projectedQuery.ToPagedResultAsync(filter);
 
             return new GoodsReceiptListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                GoodsReceipts = paged.Items.Select(gr => new GoodsReceiptResponse
-                {
-                    GoodsReceiptID = gr.GoodsReceiptID,
-                    ReceiptNumber = gr.ReceiptNumber,
-                    SupplierName = gr.Supplier != null ? gr.Supplier.SupplierName : string.Empty,
-                    UserName = gr.User != null ? gr.User.FullName : string.Empty,
-                    ReceiptDate = gr.ReceiptDate,
-                    TotalAmount = gr.TotalAmount,
-                    PaidAmount = gr.PaidAmount,
-                    Note = gr.Note
-                }).ToList()
+                GoodsReceipts = paged.Items
             };
         }
     }

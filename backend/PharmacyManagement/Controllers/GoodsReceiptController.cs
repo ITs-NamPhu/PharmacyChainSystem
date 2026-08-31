@@ -18,7 +18,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [HttpPost]
-        [HasPermission("GOODS_RECEIPT_CREATE")]
+        [HasPermission("GOODSRECEIPT_CREATE")]
         public async Task<IActionResult> Create(CreateGoodsReceiptRequest request)
         {
             var branchId = GetBranchIdFromHeader();
@@ -28,7 +28,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [HttpPut("{id}")]
-        [HasPermission("GOODS_RECEIPT_UPDATE")]
+        [HasPermission("GOODSRECEIPT_UPDATE")]
         public async Task<IActionResult> Update(long id, UpdateGoodsReceiptRequest request)
         {
             var branchId = GetBranchIdFromHeader();
@@ -38,7 +38,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [HttpDelete("{id}")]
-        [HasPermission("GOODS_RECEIPT_DELETE")]
+        [HasPermission("GOODSRECEIPT_DELETE")]
         public async Task<IActionResult> Delete(long id)
         {
             var branchId = GetBranchIdFromHeader();
@@ -47,7 +47,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [HttpGet("{id}")]
-        [HasPermission("GOODS_RECEIPT_VIEW")]
+        [HasPermission("GOODSRECEIPT_VIEW")]
         public async Task<IActionResult> GetById(long id)
         {
             var branchId = GetBranchIdFromHeader();
@@ -56,7 +56,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [HttpGet("GetAll")]
-        [HasPermission("GOODS_RECEIPT_VIEW")]
+        [HasPermission("GOODSRECEIPT_VIEW")]
         public async Task<IActionResult> GetAll([FromQuery] GoodsReceiptFilterDto filter)
         {
             var branchId = GetBranchIdFromHeader();

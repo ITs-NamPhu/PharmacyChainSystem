@@ -105,26 +105,28 @@ namespace PharmacyManagement.Services.Implements
                 .FilterByKeyword(filter.Keyword)
                 .ApplySort(filter.SortBy, filter.IsDescending);
 
-            var paged = await query.ToPagedResultAsync(filter);
+            var projectedQuery = query.Select(b => new WarehouseBatchResponse
+            {
+                BatchID = b.BatchID,
+                MedicineID = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.MedicineID : 0,
+                MedicineName = b.GoodsReceiptItem != null && b.GoodsReceiptItem.Medicine != null
+                    ? b.GoodsReceiptItem.Medicine.MedicineName : string.Empty,
+                UnitName = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.UnitName : string.Empty,
+                UnitCost = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.UnitCost : 0,
+                QuantityReceived = b.QuantityReceived,
+                QuantityInStock = b.QuantityInStock,
+                ManufactureDate = b.ManufactureDate,
+                ExpiryDate = b.ExpiryDate,
+                Note = b.Note
+            });
+
+            var paged = await projectedQuery.ToPagedResultAsync(filter);
 
             return new WarehouseBatchListResponse
             {
                 NumRecords = paged.NumRecords,
                 TotalPage = paged.TotalPage,
-                Batches = paged.Items.Select(b => new WarehouseBatchResponse
-                {
-                    BatchID = b.BatchID,
-                    MedicineID = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.MedicineID : 0,
-                    MedicineName = b.GoodsReceiptItem != null && b.GoodsReceiptItem.Medicine != null
-                        ? b.GoodsReceiptItem.Medicine.MedicineName : string.Empty,
-                    UnitName = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.UnitName : string.Empty,
-                    UnitCost = b.GoodsReceiptItem != null ? b.GoodsReceiptItem.UnitCost : 0,
-                    QuantityReceived = b.QuantityReceived,
-                    QuantityInStock = b.QuantityInStock,
-                    ManufactureDate = b.ManufactureDate,
-                    ExpiryDate = b.ExpiryDate,
-                    Note = b.Note
-                }).ToList()
+                Batches = paged.Items
             };
         }
     }
