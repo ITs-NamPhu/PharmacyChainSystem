@@ -23,6 +23,7 @@ import IndexManageSupply from './components/ManageSupply/IndexManageSupply';
 import IndexManageUnit from './components/ManageUnit/IndexManageUnit';
 import IndexManageMedicine from './components/ManageMedicine/IndexManageMedicine';
 import IndexManageInvoice from './components/ManageInvoice/IndexManageInvoice';
+import IndexManageReceipt from './components/ManageReceipt/IndexManageReceipt';
 import IndexManageGoodsReceipt from './components/ManageGoodsReceipt/IndexManageGoodsReceipt';
 import IndexManageWarehouse_Medicine from './components/ManageWarehouse_Medicine/IndexManageWarehouse_Medicine';
 import IndexStockTake from './components/ManageWareHouse/ManageStockTake/IndexManageStockTake';
@@ -58,6 +59,7 @@ const Layout = (props) => {
                     <Route path='manageunit' element={<RoleRoute roles={ROUTE_PERMISSIONS.manageunit}><IndexManageUnit /></RoleRoute>} />
                     <Route path='managemedicine' element={<RoleRoute roles={ROUTE_PERMISSIONS.managemedicine}><IndexManageMedicine /></RoleRoute>} />
                     <Route path='manageinvoice' element={<RoleRoute roles={ROUTE_PERMISSIONS.manageinvoice}><IndexManageInvoice /></RoleRoute>} />
+                    <Route path='managereceipt' element={<RoleRoute roles={ROUTE_PERMISSIONS.managereceipt}><IndexManageReceipt /></RoleRoute>} />
                     <Route path='managegoodsreceipt' element={<RoleRoute roles={ROUTE_PERMISSIONS.managegoodsreceipt}><IndexManageGoodsReceipt /></RoleRoute>} />
                     <Route path='managewarehouse_medicine' element={<RoleRoute roles={ROUTE_PERMISSIONS.managewarehouse_medicine}><IndexManageWarehouse_Medicine /></RoleRoute>} />
                     <Route path='managestocktake' element={<RoleRoute roles={ROUTE_PERMISSIONS.managestocktake}><IndexStockTake /></RoleRoute>} />

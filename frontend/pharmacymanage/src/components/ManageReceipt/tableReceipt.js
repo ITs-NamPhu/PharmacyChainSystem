@@ -1,17 +1,23 @@
 import ReactPaginate from "react-paginate";
-import { useState, useEffect } from "react";
+import { MdRemoveRedEye } from "react-icons/md";
 
-const TableCustomer = (props) => {
-    const { listCustomer, pageCount } = props;
+const TableReceipt = (props) => {
+    const { listReceipt, pageCount } = props;
 
     const handlePageClick = (event) => {
-        props.fetchListCustomer(+event.selected + 1);
-        props.setCurrentPage(+event.selected + 1)
-    }
+        props.fetchListReceipt(+event.selected + 1);
+        props.setCurrentPage(+event.selected + 1);
+    };
 
     const formatPrice = (price) => {
         if (price == null) return '0';
         return new Intl.NumberFormat('vi-VN').format(price);
+    };
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleString('vi-VN');
     };
 
     return (
@@ -20,43 +26,39 @@ const TableCustomer = (props) => {
                 <thead>
                     <tr scope="col">
                         <td>ID</td>
-                        <td>CustomerName</td>
-                        <td>Phone</td>
-                        <td>Address</td>
-                        <td>CustomerType</td>
-                        <td>Số dư ví</td>
+                        <td>Khách hàng</td>
+                        <td>Tổng tiền thu</td>
+                        <td>Đã phân bổ</td>
+                        <td>Vào ví</td>
+                        <td>Ngày tạo</td>
+                        <td>Người lập</td>
                         <td>Actions</td>
                     </tr>
                 </thead>
-
                 <tbody>
-                    {listCustomer && listCustomer.length > 0 &&
-                        listCustomer.map((value, index) => {
+                    {listReceipt && listReceipt.length > 0 &&
+                        listReceipt.map((value, index) => {
                             return (
-                                <tr key={`table-customer-${index}`}>
-                                    <td>{value.customerID}</td>
+                                <tr key={`table-receipt-${index}`}>
+                                    <td>{value.receiptID}</td>
                                     <td>{value.customerName}</td>
-                                    <td>{value.phone}</td>
-                                    <td>{value.address}</td>
-                                    <td>{value.customerTypeName}</td>
+                                    <td>{formatPrice(value.totalAmount)}</td>
+                                    <td>{formatPrice(value.amountApplied)}</td>
+                                    <td>{formatPrice(value.walletCredit)}</td>
+                                    <td>{formatDate(value.createdDate)}</td>
+                                    <td>{value.userName}</td>
                                     <td>
-                                        {value.walletBalance > 0
-                                            ? <span className="badge bg-success">{formatPrice(value.walletBalance)}đ</span>
-                                            : <span className="text-muted">0đ</span>}
-                                    </td>
-                                    <td>
-                                        <button className="btn btn-secondary">View</button>
-                                        <button className="btn btn-warning mx-3" onClick={() => props.handleUpdateCustomer(value)}>Update</button>
-                                        <button className="btn btn-danger" onClick={() => props.handleDeleteCustomer(value)}>Delete</button>
-                                        <button className="btn btn-info mx-3" onClick={() => props.handleViewWallet(value)}>Xem lịch sử ví</button>
+                                        <button className="btn btn-primary btn-sm" onClick={() => props.handleViewDetail(value)}>
+                                            <MdRemoveRedEye /> Chi tiết
+                                        </button>
                                     </td>
                                 </tr>
                             )
                         })
                     }
-                    {listCustomer && listCustomer.length === 0 &&
+                    {listReceipt && listReceipt.length === 0 &&
                         <tr>
-                            <td colSpan={7}>"Not found customer"</td>
+                            <td colSpan={8}>"Not found receipt"</td>
                         </tr>
                     }
                 </tbody>
@@ -88,4 +90,4 @@ const TableCustomer = (props) => {
     );
 }
 
-export default TableCustomer;
+export default TableReceipt;

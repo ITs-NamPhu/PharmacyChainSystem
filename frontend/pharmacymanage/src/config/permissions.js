@@ -8,6 +8,7 @@ export const ROUTE_PERMISSIONS = {
   manageunit: ['admin', 'manage_supply'],
   managemedicine: ['admin', 'manage_supply'],
   manageinvoice: ['admin', 'manage_supply', 'manage_branch', 'user_sales'],
+  managereceipt: ['admin', 'manage_supply', 'manage_branch', 'user_sales'],
   managegoodsreceipt: ['admin', 'manage_supply', 'manage_branch', 'user_warehouse'],
   managewarehouse_medicine: ['admin', 'manage_supply', 'manage_branch', 'user_sales', 'user_warehouse'],
   managestocktake: ['admin', 'manage_supply'],

@@ -3,6 +3,7 @@ import { MdAddCircle } from "react-icons/md";
 import ModalCreateCustomer from './ModalCreateCustomer';
 import ModalUpdateCustomer from './ModalUpdateCustomer';
 import ModalDeleteCustomer from './ModalDeleteCustomer';
+import ModalCustomerWallet from './ModalCustomerWallet';
 import TableCustomer from './tableCustomer';
 import './IndexManageCustomer.scss';
 import { getAllCustomerPag } from '../../services/apiService'
@@ -20,6 +21,9 @@ const IndexManageCustomer = (props) => {
 
     const [showModalDeleteCustomer, setShowModalDeleteCustomer] = useState(false);
     const [dataDelete, setDataDelete] = useState({});
+
+    const [showModalWallet, setShowModalWallet] = useState(false);
+    const [dataWalletCustomer, setDataWalletCustomer] = useState({});
 
     useEffect(() => {
         fetchListCustomer(1)
@@ -44,6 +48,10 @@ const IndexManageCustomer = (props) => {
         setShowModalDeleteCustomer(!showModalDeleteCustomer);
         setDataDelete(customer);
     }
+    const handleViewWallet = (customer) => {
+        setDataWalletCustomer(customer);
+        setShowModalWallet(true);
+    }
 
     return (
         <div className='manage-container'>
@@ -62,6 +70,7 @@ const IndexManageCustomer = (props) => {
                         listCustomer={listCustomer}
                         handleUpdateCustomer={handleUpdateCustomer}
                         handleDeleteCustomer={handleDeleteCustomer}
+                        handleViewWallet={handleViewWallet}
                         pageCount={pageCount}
                         currentPage={currentPage}
                         setCurrentPage={setCurrentPage} />
@@ -80,6 +89,10 @@ const IndexManageCustomer = (props) => {
                     fetchListCustomer={fetchListCustomer}
                     dataDelete={dataDelete}
                     setCurrentPage={setCurrentPage}
+                />
+                <ModalCustomerWallet
+                    show={showModalWallet} setShow={setShowModalWallet}
+                    customer={dataWalletCustomer}
                 />
             </div>
         </div>
