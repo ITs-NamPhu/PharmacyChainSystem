@@ -264,14 +264,18 @@ const getAllInvoicePag = (page, count) => {
 const GetInvoiceById = (invoiceID) => {
     return instance.get(`api/Invoice/${invoiceID}`)
 }
-const CreateInvoice = (customerID, note, createdByUserID, invoiceItems, mode) => {
-    return instance.post(`api/Invoice`, {
+const CreateInvoice = (customerID, note, createdByUserID, invoiceItems, mode, paidAmount, useWalletAmount) => {
+    const payload = {
         CustomerID: customerID,
         Note: note,
         CreatedByUserID: createdByUserID,
         Mode: mode,
         InvoiceItems: invoiceItems
-    })
+    };
+    if (paidAmount != null && paidAmount > 0) payload.PaidAmount = +paidAmount;
+    if (useWalletAmount != null && useWalletAmount > 0) payload.UseWalletAmount = +useWalletAmount;
+
+    return instance.post(`api/Invoice`, payload)
 }
 const UpdateInvoice = (invoiceID, customerID, note, createdByUserID, invoiceItems, mode) => {
     return instance.put(`api/Invoice/${invoiceID}`, {
@@ -297,6 +301,24 @@ const GetFefoBatches = (medicineID, quantity) => {
 }
 const GetUsersByBranch = () => {
     return instance.get(`api/Invoice/UsersByBranch`)
+}
+
+// receipt (phiếu thu)
+const getAllReceiptPag = (page, count, customerId) => {
+    const params = { page: page, count: count };
+    if (customerId) params.customerId = customerId;
+    return instance.get(`api/Receipt`, { params })
+}
+const GetReceiptById = (receiptID) => {
+    return instance.get(`api/Receipt/${receiptID}`)
+}
+const CreateReceipt = (customerID, totalAmount) => {
+    return instance.post(`api/Receipt`, { CustomerID: customerID, TotalAmount: totalAmount })
+}
+
+// customer wallet
+const GetCustomerWalletById = (customerID) => {
+    return instance.get(`api/Customer/${customerID}/Wallet`)
 }
 
 const postLogin = (username, userpassword, delay) => {
@@ -587,6 +609,7 @@ export {
     getAllBranchPag, UpdateBranch, DeleteBranch, CreateBranch,
 
     getAllCustomerPag, CreateCustomer, UpdateCustomer, DeleteCustomer, getAllCustomerType, getAllCustomerNoPag,
+    GetCustomerWalletById,
     getAllManufacturerPag, CreateManufacturer, UpdateManufacturer, DeleteManufacturer,
     getAllSupplierPag, CreateSupplier, UpdateSupplier, DeleteSupplier, getAllSupplierNoPag,
     getAllUnitPag, GetAllUnitNoPag, CreateUnit, UpdateUnit, DeleteUnit,
@@ -600,6 +623,8 @@ export {
     getAllInvoicePag, GetInvoiceById, CreateInvoice, UpdateInvoice, DeleteInvoice,
     GetBatchesByMedicine, GetFefoBatches, GetUsersByBranch,
     getAllUnitConversion_Medicine,
+
+    getAllReceiptPag, GetReceiptById, CreateReceipt,
 
     getAllGoodsReceiptPag, GetGoodsReceiptById, CreateGoodsReceipt, UpdateGoodsReceipt, DeleteGoodsReceipt,
 

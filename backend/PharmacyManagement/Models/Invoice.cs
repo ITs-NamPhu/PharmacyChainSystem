@@ -14,10 +14,14 @@ namespace PharmacyManagement.Models
         public decimal TotalAmount { get; set; }
         public decimal PaidAmount { get; set; }
 
+        // Trạng thái thanh toán: Debt (còn nợ) hoặc Paid (đã trả hết)
+        public PaymentStatus PaymentStatus { get; set; }
+
         [StringLength(255)]
         public String Note { get; set; }
 
         public ICollection<InvoiceItem>? InvoiceItem { get; set; }
+        public ICollection<ReceiptDetail>? ReceiptDetail { get; set; }
         public Customer? Customer { get; set; }
         public Branch? Branch { get; set; }
         public User? User { get; set; }

@@ -13,5 +13,8 @@ namespace PharmacyManagement.Repositories.Interfaces
         void Update(Customer entity);
         void Delete(Customer entity);
         Task SaveChangesAsync();
+
+        // ===== Tính năng ví khách hàng =====
+        Task<List<CustomerWalletHistory>> GetWalletHistoryAsync(long customerId, int skip, int take);
     }
 }

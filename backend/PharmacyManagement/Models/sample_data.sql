@@ -2,14 +2,16 @@
 ===============================================================================
 PHARMACY MANAGEMENT SYSTEM - COMPREHENSIVE SAMPLE DATA SCRIPT
 ===============================================================================
-Compatible with EF Core 9 Schema & Migrations
+Compatible with EF Core 9 Schema & Latest Migrations
 - Fixed Batch table structure (no BatchNumber)
 - Added UnitName to GoodsReceiptItem and InvoiceItem
-- Added IsDeleted soft-delete support across all entities
-- Dynamic relative dates around GETDATE() for dashboard analytics (7-day trend, today shift, expiring batches, low stock, destroy queue)
+- Added IsDeleted soft-delete support across all entities (User, Customer, Supplier, Manufacturer, Medicine, GoodsReceipt, Invoice, Receipt)
+- Support new Debt & Payment entities: Receipt, ReceiptDetail, CustomerWalletHistory, CustomerDebtSummary (int Year/Month)
+- Customer Email constraint: only 'itsephu' and 'namphuits' have Email; all others are NULL
+- Explicit test records for 'itsephu' (with outstanding debt) and 'namphuits' (zero debt)
+- Dynamic relative dates around GETDATE() for dashboard analytics
 - Consistent stock tracking, foreign keys, unique constraints on StockAdjustment/DestroyReceipt
 - Rich realistic Vietnamese pharmaceutical catalog (400+ medicines, 400+ customers, 50+ suppliers)
-- Safe dynamic guards for all tables and clean variable scoping
 ===============================================================================
 */
 
@@ -99,6 +101,21 @@ BEGIN
     EXEC(N'DELETE FROM [PurchaseReturn]; DBCC CHECKIDENT ([PurchaseReturn], RESEED, 0);');
 END
 
+IF OBJECT_ID(N'[ReceiptDetail]', N'U') IS NOT NULL
+BEGIN
+    EXEC(N'DELETE FROM [ReceiptDetail]; DBCC CHECKIDENT ([ReceiptDetail], RESEED, 0);');
+END
+
+IF OBJECT_ID(N'[Receipt]', N'U') IS NOT NULL
+BEGIN
+    EXEC(N'DELETE FROM [Receipt]; DBCC CHECKIDENT ([Receipt], RESEED, 0);');
+END
+
+IF OBJECT_ID(N'[CustomerWalletHistory]', N'U') IS NOT NULL
+BEGIN
+    EXEC(N'DELETE FROM [CustomerWalletHistory]; DBCC CHECKIDENT ([CustomerWalletHistory], RESEED, 0);');
+END
+
 IF OBJECT_ID(N'[InvoiceItem]', N'U') IS NOT NULL
 BEGIN
     EXEC(N'DELETE FROM [InvoiceItem]; DBCC CHECKIDENT ([InvoiceItem], RESEED, 0);');
@@ -169,11 +186,6 @@ BEGIN
     EXEC(N'DELETE FROM [Supplier]; DBCC CHECKIDENT ([Supplier], RESEED, 0);');
 END
 
-IF OBJECT_ID(N'[Receipt]', N'U') IS NOT NULL
-BEGIN
-    EXEC(N'DELETE FROM [Receipt]; DBCC CHECKIDENT ([Receipt], RESEED, 0);');
-END
-
 IF OBJECT_ID(N'[CustomerDebtSummary]', N'U') IS NOT NULL
 BEGIN
     EXEC(N'DELETE FROM [CustomerDebtSummary]; DBCC CHECKIDENT ([CustomerDebtSummary], RESEED, 0);');
@@ -229,6 +241,12 @@ BEGIN
     EXEC(N'DELETE FROM [Role]; DBCC CHECKIDENT ([Role], RESEED, 0);');
 END
 
+-- Tuong thich: Dam bao neu cot BatchNumber ton tai tren DB thi cho phep NULL de tranh loi INSERT
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[Batch]') AND name = 'BatchNumber' AND is_nullable = 0)
+BEGIN
+    EXEC(N'ALTER TABLE [Batch] ALTER COLUMN [BatchNumber] BIGINT NULL;');
+END
+
 -- =============================================================================
 -- 1. ROLES (5 vai tro he thong)
 -- =============================================================================
@@ -257,6 +275,12 @@ INSERT INTO [Permission] ([Name], [Description]) VALUES
 ('CUSTOMERTYPE_CREATE', N'Them loai khach hang'),
 ('CUSTOMERTYPE_UPDATE', N'Cap nhat loai khach hang'),
 ('CUSTOMERTYPE_DELETE', N'Xoa loai khach hang'),
+('CUSTOMER_DEBT_VIEW', N'Xem cong no khach hang'),
+('CUSTOMER_DEBT_CLOSE', N'Chot so cong no khach hang'),
+('RECEIPT_VIEW', N'Xem phieu thu'),
+('RECEIPT_CREATE', N'Tao phieu thu'),
+('RECEIPT_UPDATE', N'Cap nhat phieu thu'),
+('RECEIPT_DELETE', N'Xoa phieu thu'),
 ('DESTROY_VIEW', N'Xem phieu tieu huy'),
 ('DESTROY_CREATE', N'Tao phieu tieu huy'),
 ('DESTROY_APPROVE', N'Duyet phieu tieu huy'),
@@ -354,18 +378,20 @@ WHERE [Name] LIKE 'MEDICINE%' OR [Name] LIKE 'MANUFACTURER%' OR [Name] LIKE 'UNI
    OR [Name] LIKE 'PROMOTION%' OR [Name] LIKE 'STOCKTAKE%' OR [Name] LIKE 'STOCK_ADJUSTMENT%'
    OR [Name] LIKE 'DESTROY%' OR [Name] LIKE '%USER_VIEW%' OR [Name] LIKE 'PERMISSION_VIEW'
 
--- Manage Branch (Role 3): Quan ly ban hang, khach hang, kho, kiem ke, dieu chinh, huy tai chi nhanh
+-- Manage Branch (Role 3): Quan ly ban hang, khach hang, phieu thu, cong no, kho, kiem ke tai chi nhanh
 INSERT INTO [RolePermission] ([RoleID], [PermissionID])
 SELECT 3, [PermissionID] FROM [Permission]
 WHERE [Name] LIKE 'INVOICE%' OR [Name] LIKE 'CUSTOMER%' OR [Name] LIKE 'SALESRETURN%'
+   OR [Name] LIKE 'RECEIPT%' OR [Name] LIKE 'CUSTOMER_DEBT%'
    OR [Name] LIKE 'BATCH%' OR [Name] LIKE 'WAREHOUSE%' OR [Name] LIKE 'STOCKTAKE%'
    OR [Name] LIKE 'STOCK_ADJUSTMENT%' OR [Name] LIKE 'DESTROY%' OR [Name] LIKE 'MEDICINE_VIEW%'
    OR [Name] LIKE 'UNIT_VIEW%' OR [Name] LIKE '%USER_VIEW%' OR [Name] LIKE 'PROMOTION_VIEW'
 
--- User Sale (Role 4): Nhan vien ban hang
+-- User Sale (Role 4): Nhan vien ban hang (lap hoa don, phieu thu, tra hang, tra cuu)
 INSERT INTO [RolePermission] ([RoleID], [PermissionID])
 SELECT 4, [PermissionID] FROM [Permission]
 WHERE [Name] LIKE 'INVOICE%' OR [Name] LIKE 'CUSTOMER%' OR [Name] LIKE 'SALESRETURN%'
+   OR [Name] LIKE 'RECEIPT%' OR [Name] LIKE 'CUSTOMER_DEBT_VIEW%'
    OR [Name] LIKE 'MEDICINE_VIEW%' OR [Name] LIKE 'UNIT_VIEW%' OR [Name] LIKE 'BATCH_VIEW%'
    OR [Name] LIKE 'PROMOTION_VIEW'
 
@@ -451,46 +477,87 @@ INSERT INTO [CustomerType] ([TypeName], [DiscountPercent]) VALUES
 (N'Đại lý / Nhà thuốc liên kết', 8.00)
 
 -- =============================================================================
--- 10. CUSTOMERS (400 khach hang voi thong tin phong phu)
+-- 10. CUSTOMERS (400 khach hang; chi 2 dong co email: itsephu, namphuits)
 -- =============================================================================
 PRINT '10/32 - Dang tao Customers...'
 DECLARE @c INT = 1
 DECLARE @c_name NVARCHAR(255)
 DECLARE @c_phone NVARCHAR(10)
 DECLARE @c_addr NVARCHAR(255)
+DECLARE @c_email NVARCHAR(255)
 DECLARE @c_type BIGINT
+
 WHILE @c <= 400
 BEGIN
-    SET @c_name = CASE (@c % 20)
-        WHEN 0 THEN N'Nguyễn Văn An' WHEN 1 THEN N'Trần Thị Bích' WHEN 2 THEN N'Lê Hoàng Cường'
-        WHEN 3 THEN N'Phạm Thị Diệu' WHEN 4 THEN N'Hoàng Đức Em' WHEN 5 THEN N'Võ Thị Phương'
-        WHEN 6 THEN N'Phan Minh Giang' WHEN 7 THEN N'Đặng Văn Hải' WHEN 8 THEN N'Bùi Thị Kiều'
-        WHEN 9 THEN N'Đỗ Quốc Long' WHEN 10 THEN N'Nguyễn Thị Mai' WHEN 11 THEN N'Trần Văn Nam'
-        WHEN 12 THEN N'Lê Thanh Oanh' WHEN 13 THEN N'Phạm Thị Quyên' WHEN 14 THEN N'Võ Văn Sơn'
-        WHEN 15 THEN N'Trịnh Thị Thảo' WHEN 16 THEN N'Dương Văn Uy' WHEN 17 THEN N'Lý Thị Vân'
-        WHEN 18 THEN N'Ngô Văn Xuân' ELSE N'Đinh Thị Yến'
-    END + ' - KH' + RIGHT('000' + CAST(@c AS NVARCHAR), 4)
-    SET @c_phone = '09' + RIGHT('00000000' + CAST((@c * 1234567 + 890123) % 100000000 AS NVARCHAR), 8)
-    SET @c_addr = CAST((@c % 150) + 1 AS NVARCHAR) + N' Đường ' + 
-        CASE (@c % 6)
-            WHEN 0 THEN N'Lê Lợi, Quận 1, TP.HCM'
-            WHEN 1 THEN N'Giải Phóng, Đống Đa, Hà Nội'
-            WHEN 2 THEN N'Nguyễn Văn Linh, Hải Châu, Đà Nẵng'
-            WHEN 3 THEN N'30 Tháng 4, Ninh Kiều, Cần Thơ'
-            WHEN 4 THEN N'Cách Mạng Tháng 8, Quận 3, TP.HCM'
-            ELSE N'Cầu Giấy, Cầu Giấy, Hà Nội'
-        END
-    SET @c_type = CASE WHEN @c % 20 = 0 THEN 4 WHEN @c % 7 = 0 THEN 1 WHEN @c % 3 = 0 THEN 2 ELSE 3 END
-    INSERT INTO [Customer] ([CustomerName], [Phone], [Address], [CustomerTypeID], [IsDeleted])
-    VALUES (@c_name, @c_phone, @c_addr, @c_type, 0)
+    IF @c = 1
+    BEGIN
+        SET @c_name = N'Nguyễn Văn An (itsephu)'
+        SET @c_phone = '0901234561'
+        SET @c_addr = N'123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'
+        SET @c_email = 'itsephu'
+        SET @c_type = 1 -- VIP
+    END
+    ELSE IF @c = 2
+    BEGIN
+        SET @c_name = N'Trần Thị Bích (namphuits)'
+        SET @c_phone = '0901234562'
+        SET @c_addr = N'456 Nguyễn Huệ, Phường Tràng Tiền, Quận Hoàn Kiếm, Hà Nội'
+        SET @c_email = 'namphuits'
+        SET @c_type = 2 -- Than thiet
+    END
+    ELSE
+    BEGIN
+        SET @c_name = CASE (@c % 20)
+            WHEN 0 THEN N'Nguyễn Văn An' WHEN 1 THEN N'Trần Thị Bích' WHEN 2 THEN N'Lê Hoàng Cường'
+            WHEN 3 THEN N'Phạm Thị Diệu' WHEN 4 THEN N'Hoàng Đức Em' WHEN 5 THEN N'Võ Thị Phương'
+            WHEN 6 THEN N'Phan Minh Giang' WHEN 7 THEN N'Đặng Văn Hải' WHEN 8 THEN N'Bùi Thị Kiều'
+            WHEN 9 THEN N'Đỗ Quốc Long' WHEN 10 THEN N'Nguyễn Thị Mai' WHEN 11 THEN N'Trần Văn Nam'
+            WHEN 12 THEN N'Lê Thanh Oanh' WHEN 13 THEN N'Phạm Thị Quyên' WHEN 14 THEN N'Võ Văn Sơn'
+            WHEN 15 THEN N'Trịnh Thị Thảo' WHEN 16 THEN N'Dương Văn Uy' WHEN 17 THEN N'Lý Thị Vân'
+            WHEN 18 THEN N'Ngô Văn Xuân' ELSE N'Đinh Thị Yến'
+        END + ' - KH' + RIGHT('000' + CAST(@c AS NVARCHAR), 4)
+        SET @c_phone = '09' + RIGHT('00000000' + CAST((@c * 1234567 + 890123) % 100000000 AS NVARCHAR), 8)
+        SET @c_addr = CAST((@c % 150) + 1 AS NVARCHAR) + N' Đường ' + 
+            CASE (@c % 6)
+                WHEN 0 THEN N'Lê Lợi, Quận 1, TP.HCM'
+                WHEN 1 THEN N'Giải Phóng, Đống Đa, Hà Nội'
+                WHEN 2 THEN N'Nguyễn Văn Linh, Hải Châu, Đà Nẵng'
+                WHEN 3 THEN N'30 Tháng 4, Ninh Kiều, Cần Thơ'
+                WHEN 4 THEN N'Cách Mạng Tháng 8, Quận 3, TP.HCM'
+                ELSE N'Cầu Giấy, Cầu Giấy, Hà Nội'
+            END
+        SET @c_email = NULL -- Field email bo trong cho tat ca khach hang con lai
+        SET @c_type = CASE WHEN @c % 20 = 0 THEN 4 WHEN @c % 7 = 0 THEN 1 WHEN @c % 3 = 0 THEN 2 ELSE 3 END
+    END
+
+    INSERT INTO [Customer] ([CustomerName], [Phone], [Address], [Email], [CustomerTypeID], [WalletBalance], [IsDeleted])
+    VALUES (@c_name, @c_phone, @c_addr, @c_email, @c_type, 0.00, 0)
     SET @c = @c + 1
 END
 
 -- =============================================================================
--- 11. CUSTOMER DEBT SUMMARY (Cong no khach hang theo thang)
+-- 11. CUSTOMER DEBT SUMMARY (Cong no: Customer 1 itsephu CON NO, Customer 2 namphuits HET NO)
 -- =============================================================================
 PRINT '11/32 - Dang tao CustomerDebtSummary...'
-DECLARE @cd INT = 1
+DECLARE @cur_year INT = YEAR(GETDATE())
+DECLARE @cur_month INT = MONTH(GETDATE())
+DECLARE @prev_year INT = YEAR(DATEADD(month, -1, GETDATE()))
+DECLARE @prev_month INT = MONTH(DATEADD(month, -1, GETDATE()))
+
+-- Customer 1 (itsephu): CON NO 4.500.000 (Phat sinh 5.500.000, da tra 1.000.000)
+INSERT INTO [CustomerDebtSummary] ([CustomerID], [Year], [Month], [OpeningBalance], [Increase], [Paid], [ClosingBalance], [IsLocked])
+VALUES 
+(1, @prev_year, @prev_month, 0.00, 5500000.00, 1000000.00, 4500000.00, 1),
+(1, @cur_year, @cur_month, 4500000.00, 0.00, 0.00, 4500000.00, 0);
+
+-- Customer 2 (namphuits): KHONG CON NO (Phat sinh 3.500.000, da tra 3.500.000 => Du no 0)
+INSERT INTO [CustomerDebtSummary] ([CustomerID], [Year], [Month], [OpeningBalance], [Increase], [Paid], [ClosingBalance], [IsLocked])
+VALUES 
+(2, @prev_year, @prev_month, 0.00, 3500000.00, 3500000.00, 0.00, 1),
+(2, @cur_year, @cur_month, 0.00, 0.00, 0.00, 0.00, 0);
+
+-- Cac khach hang con lai (3..150)
+DECLARE @cd INT = 3
 DECLARE @open_bal DECIMAL(18,2)
 DECLARE @increase DECIMAL(18,2)
 DECLARE @paid DECIMAL(18,2)
@@ -500,26 +567,14 @@ BEGIN
     SET @increase = CAST((@cd * 250000) % 8000000 + 500000 AS DECIMAL(18,2))
     SET @paid = CAST(@open_bal + (@increase * 0.8) AS DECIMAL(18,2))
     INSERT INTO [CustomerDebtSummary] ([CustomerID], [Year], [Month], [OpeningBalance], [Increase], [Paid], [ClosingBalance], [IsLocked])
-    VALUES (@cd, DATEADD(month, -1, GETDATE()), DATEADD(month, -1, GETDATE()), @open_bal, @increase, @paid, @open_bal + @increase - @paid, 0)
+    VALUES (@cd, @prev_year, @prev_month, @open_bal, @increase, @paid, @open_bal + @increase - @paid, 1)
     SET @cd = @cd + 1
 END
 
 -- =============================================================================
--- 12. RECEIPTS (Phieu thu tien khach hang)
+-- 12. SUPPLIERS (50 Nha cung cap duoc pham uy tin)
 -- =============================================================================
-PRINT '12/32 - Dang tao Receipts...'
-DECLARE @rc INT = 1
-WHILE @rc <= 200
-BEGIN
-    INSERT INTO [Receipt] ([ReceiptNumber], [CustomerID], [TotalAmount])
-    VALUES (@rc, ((@rc - 1) % 400) + 1, CAST((@rc * 75000) % 5000000 + 200000 AS DECIMAL(18,2)))
-    SET @rc = @rc + 1
-END
-
--- =============================================================================
--- 13. SUPPLIERS (50 Nha cung cap duoc pham uy tin)
--- =============================================================================
-PRINT '13/32 - Dang tao Suppliers...'
+PRINT '12/32 - Dang tao Suppliers...'
 INSERT INTO [Supplier] ([SupplierName], [Phone], [Email], [Address], [IsDeleted]) VALUES
 (N'Công ty Cổ phần Dược Hậu Giang (DHG)', '0292389143', 'dhgpharma@dhgpharma.com.vn', N'288 Bis Nguyễn Văn Cừ, An Hòa, Ninh Kiều, Cần Thơ', 0),
 (N'Công ty Cổ phần Traphaco', '0243734179', 'info@traphaco.com.vn', N'75 Yên Ninh, Ba Đình, Hà Nội', 0),
@@ -573,9 +628,9 @@ INSERT INTO [Supplier] ([SupplierName], [Phone], [Email], [Address], [IsDeleted]
 (N'Nhà phân phối Dược phẩm Phía Bắc #50', '0243000050', 'supplier50@pharma-distributor.vn', N'Số 150 KCN Quang Minh, Mê Linh, Hà Nội', 0)
 
 -- =============================================================================
--- 14. MEDICINE CATEGORIES (15 danh muc thuoc)
+-- 13. MEDICINE CATEGORIES (15 danh muc thuoc)
 -- =============================================================================
-PRINT '14/32 - Dang tao MedicineCategory...'
+PRINT '13/32 - Dang tao MedicineCategory...'
 INSERT INTO [MedicineCategory] ([CategoryName]) VALUES
 (N'Thuốc giảm đau - hạ sốt - kháng viêm (NSAIDs)'),
 (N'Thuốc kháng sinh - kháng nấm - kháng virus'),
@@ -594,9 +649,9 @@ INSERT INTO [MedicineCategory] ([CategoryName]) VALUES
 (N'Thiết bị & vật tư y tế gia đình')
 
 -- =============================================================================
--- 15. MANUFACTURERS (20 hang san xuat duoc pham)
+-- 14. MANUFACTURERS (20 hang san xuat duoc pham)
 -- =============================================================================
-PRINT '15/32 - Dang tao Manufacturer...'
+PRINT '14/32 - Dang tao Manufacturer...'
 INSERT INTO [ManuFacturer] ([ManufacturerName], [IsDeleted]) VALUES
 (N'DHG Pharma (Dược Hậu Giang)', 0),
 (N'Traphaco', 0),
@@ -620,9 +675,9 @@ INSERT INTO [ManuFacturer] ([ManufacturerName], [IsDeleted]) VALUES
 (N'Mediplantex', 0)
 
 -- =============================================================================
--- 16. UNITS (15 don vi tinh)
+-- 15. UNITS (15 don vi tinh)
 -- =============================================================================
-PRINT '16/32 - Dang tao Unit...'
+PRINT '15/32 - Dang tao Unit...'
 INSERT INTO [Unit] ([UnitName]) VALUES
 (N'Viên'),
 (N'Vỉ'),
@@ -641,9 +696,9 @@ INSERT INTO [Unit] ([UnitName]) VALUES
 (N'ml')
 
 -- =============================================================================
--- 17. MEDICINES (400 thuoc thuc te voi gia va quy cach dong goi chuan)
+-- 16. MEDICINES (400 thuoc thuc te voi gia va quy cach dong goi chuan)
 -- =============================================================================
-PRINT '17/32 - Dang tao Medicine...'
+PRINT '16/32 - Dang tao Medicine...'
 DECLARE @m INT = 1
 DECLARE @m_name NVARCHAR(255)
 DECLARE @m_cat BIGINT
@@ -661,7 +716,6 @@ BEGIN
     SET @m_price = CAST(((@m * 17941) % 450000) + 15000 AS DECIMAL(18,2))
     SET @m_vat = CASE (@m % 3) WHEN 0 THEN 0.00 WHEN 1 THEN 5.00 ELSE 10.00 END
 
-    -- Chon ten thuoc theo category
     SET @m_name = CASE @m_cat
         WHEN 1 THEN -- Giam dau ha sot
             CASE (@m % 6)
@@ -785,7 +839,6 @@ BEGIN
             END
     END + ' (SKU-' + RIGHT('000' + CAST(@m AS NVARCHAR), 4) + ')'
 
-    -- Dinh nghia don vi theo loai san pham
     IF @m_cat IN (8, 14) AND @m % 2 = 0
     BEGIN
         SET @m_base_u = 8  -- Tuyp
@@ -813,9 +866,9 @@ BEGIN
 END
 
 -- =============================================================================
--- 18. UNIT CONVERSIONS (Quy doi don vi chinh xac theo tung thuoc)
+-- 17. UNIT CONVERSIONS (Quy doi don vi chinh xac theo tung thuoc)
 -- =============================================================================
-PRINT '18/32 - Dang tao UnitConversion...'
+PRINT '17/32 - Dang tao UnitConversion...'
 DECLARE @uc INT = 1
 DECLARE @base_u BIGINT
 WHILE @uc <= 400
@@ -847,17 +900,17 @@ BEGIN
 END
 
 -- =============================================================================
--- 19. PRICE LIST ITEMS (Tat ca thuoc deu co gia trong bang gia chung)
+-- 18. PRICE LIST ITEMS (Tat ca thuoc deu co gia trong bang gia chung)
 -- =============================================================================
-PRINT '19/32 - Dang tao PriceListItem...'
+PRINT '18/32 - Dang tao PriceListItem...'
 INSERT INTO [PriceListItem] ([PriceListID], [MedicineID], [RetailPrice], [WholesalePrice])
 SELECT 1, [MedicineID], [DefaultRetailPrice], [DefaultWholesalePrice]
 FROM [Medicine]
 
 -- =============================================================================
--- 20. PROMOTIONS & PROMOTION ITEMS (Cac chuong trinh khuyen mai dang chay)
+-- 19. PROMOTIONS & PROMOTION ITEMS (Cac chuong trinh khuyen mai dang chay)
 -- =============================================================================
-PRINT '20/32 - Dang tao Promotion & PromotionItem...'
+PRINT '19/32 - Dang tao Promotion & PromotionItem...'
 INSERT INTO [Promotion] ([PromotionName], [StartDate], [EndDate]) VALUES
 (N'Tri Ân Khách Hàng - Giảm Giá Sức Khỏe Mùa Thu', DATEADD(month, -1, GETDATE()), DATEADD(month, 2, GETDATE())),
 (N'Tháng Chăm Sóc Sức Khỏe Gia Đình', DATEADD(day, -15, GETDATE()), DATEADD(day, 45, GETDATE())),
@@ -869,9 +922,9 @@ INSERT INTO [PromotionItem] ([PromotionID], [MedicineID], [DiscountValue]) VALUE
 (3, 40, 10000.00), (3, 45, 15000.00), (3, 50, 8000.00), (3, 55, 25000.00)
 
 -- =============================================================================
--- 21. GOODS RECEIPTS, ITEMS & BATCHES (400 phieu nhap, tao kho va lo thuoc)
+-- 20. GOODS RECEIPTS, ITEMS & BATCHES (400 phieu nhap, tao kho va lo thuoc)
 -- =============================================================================
-PRINT '21/32 - Dang tao GoodsReceipt, GoodsReceiptItem & Batch...'
+PRINT '20/32 - Dang tao GoodsReceipt, GoodsReceiptItem & Batch...'
 DECLARE @gr INT = 1
 DECLARE @gr_branch INT
 DECLARE @gr_warehouse BIGINT
@@ -934,7 +987,6 @@ BEGIN
             SET @exp = DATEADD(year, 2, @gr_date)    -- Con han 2 nam
 
         SET @stock_qty = @qty
-        -- Dat so luong ton thap cho mot so lo de test canh bao ton kho (low stock)
         IF @gr % 17 = 0 AND @item_idx = 1
             SET @stock_qty = CAST((@gr % 7) + 2 AS DECIMAL(18,2)) -- Ton 2-8 don vi (< 10)
 
@@ -953,17 +1005,53 @@ BEGIN
 END
 
 -- =============================================================================
--- 22. INVOICES & INVOICE ITEMS (400 hoa don ban le va ban buon)
--- Phan bo thoi gian: Co hoa don trong 7 ngay gan nhat & hom nay cho Dashboard
+-- 21. INVOICES & INVOICE ITEMS (Customer 1 itsephu: CON NO; Customer 2 namphuits: HET NO)
 -- =============================================================================
-PRINT '22/32 - Dang tao Invoice & InvoiceItem...'
-DECLARE @inv INT = 1
+PRINT '21/32 - Dang tao Invoice & InvoiceItem...'
+
+-- 1. Customer 1 (itsephu): Invoice 1 (3.000.000, da tra 1.000.000, con no 2.000.000 => PaymentStatus = 0)
+INSERT INTO [Invoice] ([CustomerID], [BranchID], [UserID], [CreatedAt], [TotalAmount], [PaidAmount], [PaymentStatus], [Note], [IsDeleted])
+VALUES (1, 1, 7, DATEADD(day, -25, GETDATE()), 3000000.00, 1000000.00, 0, N'Hóa đơn mua thuốc đợt 1 - itsephu (Còn nợ)', 0);
+DECLARE @inv1 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [InvoiceItem] ([InvoiceID], [BatchID], [UnitID], [UnitName], [Quantity], [ConversionFactor], [BaseQuantity], [UnitPrice]) VALUES
+(@inv1, 1, 3, N'Hộp', 10.00, 100.00, 1000.00, 150000.00),
+(@inv1, 2, 3, N'Hộp', 10.00, 100.00, 1000.00, 150000.00);
+UPDATE [Batch] SET [QuantityInStock] = [QuantityInStock] - 10.00 WHERE [BatchID] IN (1, 2);
+
+-- 2. Customer 1 (itsephu): Invoice 2 (2.500.000, chua tra => PaymentStatus = 0)
+INSERT INTO [Invoice] ([CustomerID], [BranchID], [UserID], [CreatedAt], [TotalAmount], [PaidAmount], [PaymentStatus], [Note], [IsDeleted])
+VALUES (1, 1, 7, DATEADD(day, -10, GETDATE()), 2500000.00, 0.00, 0, N'Hóa đơn mua thuốc đợt 2 - itsephu (Chưa thanh toán)', 0);
+DECLARE @inv2 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [InvoiceItem] ([InvoiceID], [BatchID], [UnitID], [UnitName], [Quantity], [ConversionFactor], [BaseQuantity], [UnitPrice]) VALUES
+(@inv2, 3, 3, N'Hộp', 5.00, 100.00, 500.00, 500000.00);
+UPDATE [Batch] SET [QuantityInStock] = [QuantityInStock] - 5.00 WHERE [BatchID] = 3;
+
+-- 3. Customer 2 (namphuits): Invoice 3 (2.000.000, da tra du 2.000.000 => PaymentStatus = 1)
+INSERT INTO [Invoice] ([CustomerID], [BranchID], [UserID], [CreatedAt], [TotalAmount], [PaidAmount], [PaymentStatus], [Note], [IsDeleted])
+VALUES (2, 1, 7, DATEADD(day, -20, GETDATE()), 2000000.00, 2000000.00, 1, N'Hóa đơn mua thuốc theo đơn - namphuits (Đã thanh toán)', 0);
+DECLARE @inv3 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [InvoiceItem] ([InvoiceID], [BatchID], [UnitID], [UnitName], [Quantity], [ConversionFactor], [BaseQuantity], [UnitPrice]) VALUES
+(@inv3, 4, 3, N'Hộp', 10.00, 100.00, 1000.00, 200000.00);
+UPDATE [Batch] SET [QuantityInStock] = [QuantityInStock] - 10.00 WHERE [BatchID] = 4;
+
+-- 4. Customer 2 (namphuits): Invoice 4 (1.500.000, da tra du 1.500.000 => PaymentStatus = 1)
+INSERT INTO [Invoice] ([CustomerID], [BranchID], [UserID], [CreatedAt], [TotalAmount], [PaidAmount], [PaymentStatus], [Note], [IsDeleted])
+VALUES (2, 1, 7, DATEADD(day, -8, GETDATE()), 1500000.00, 1500000.00, 1, N'Hóa đơn mua vitamin - namphuits (Đã thanh toán)', 0);
+DECLARE @inv4 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [InvoiceItem] ([InvoiceID], [BatchID], [UnitID], [UnitName], [Quantity], [ConversionFactor], [BaseQuantity], [UnitPrice]) VALUES
+(@inv4, 5, 3, N'Hộp', 5.00, 100.00, 500.00, 300000.00);
+UPDATE [Batch] SET [QuantityInStock] = [QuantityInStock] - 5.00 WHERE [BatchID] = 5;
+
+-- Invoices 5..400 cho cac khach hang khac
+DECLARE @inv INT = 5
 DECLARE @inv_branch INT
 DECLARE @inv_user BIGINT
 DECLARE @inv_cust BIGINT
 DECLARE @inv_date DATETIME2
 DECLARE @inv_id BIGINT
 DECLARE @inv_total DECIMAL(18,2)
+DECLARE @inv_paid DECIMAL(18,2)
+DECLARE @inv_status INT
 DECLARE @inv_num_items INT
 DECLARE @inv_item_idx INT
 DECLARE @batch_id BIGINT
@@ -977,21 +1065,19 @@ WHILE @inv <= 400
 BEGIN
     SET @inv_branch = ((@inv - 1) % 4) + 1
     SET @inv_user = CASE @inv_branch WHEN 1 THEN 7 WHEN 2 THEN 8 WHEN 3 THEN 9 ELSE 10 END
-    SET @inv_cust = ((@inv * 3) % 400) + 1
+    SET @inv_cust = ((@inv * 3) % 398) + 3 -- CustomerID tu 3 den 400
 
-    -- Tao lich su ngay ban:
-    -- 50 hoa don cuoi cung phan bo trong 7 ngay gan day va hom nay
     IF @inv > 350
         SET @inv_date = DATEADD(minute, ((@inv * 23) % 720), DATEADD(day, - (400 - @inv) % 7, CAST(CAST(GETDATE() AS DATE) AS DATETIME2)))
     ELSE
         SET @inv_date = DATEADD(day, - (400 - @inv), GETDATE())
 
-    INSERT INTO [Invoice] ([CustomerID], [BranchID], [UserID], [CreatedAt], [TotalAmount], [PaidAmount], [Note], [IsDeleted])
-    VALUES (@inv_cust, @inv_branch, @inv_user, @inv_date, 0, 0, N'Hóa đơn bán hàng điện tử số ' + CAST(@inv AS NVARCHAR), 0)
+    INSERT INTO [Invoice] ([CustomerID], [BranchID], [UserID], [CreatedAt], [TotalAmount], [PaidAmount], [PaymentStatus], [Note], [IsDeleted])
+    VALUES (@inv_cust, @inv_branch, @inv_user, @inv_date, 0, 0, 0, N'Hóa đơn bán hàng điện tử số ' + CAST(@inv AS NVARCHAR), 0)
     SET @inv_id = SCOPE_IDENTITY()
 
     SET @inv_total = 0
-    SET @inv_num_items = (@inv % 3) + 2 -- 2 to 4 items
+    SET @inv_num_items = (@inv % 3) + 2
     SET @inv_item_idx = 1
 
     WHILE @inv_item_idx <= @inv_num_items
@@ -1014,7 +1100,6 @@ BEGIN
         INSERT INTO [InvoiceItem] ([InvoiceID], [BatchID], [UnitID], [UnitName], [Quantity], [ConversionFactor], [BaseQuantity], [UnitPrice])
         VALUES (@inv_id, @batch_id, @item_unit_id, @item_unit_name, @sell_qty, 1.00, @sell_qty, @item_price)
 
-        -- Tru ton kho
         UPDATE [Batch]
         SET [QuantityInStock] = [QuantityInStock] - @sell_qty
         WHERE [BatchID] = @batch_id AND [QuantityInStock] >= @sell_qty
@@ -1023,11 +1108,86 @@ BEGIN
         SET @inv_item_idx = @inv_item_idx + 1
     END
 
+    IF @inv % 5 = 0
+    BEGIN
+        SET @inv_paid = CAST(@inv_total * 0.5 AS DECIMAL(18,2))
+        SET @inv_status = 0 -- Debt
+    END
+    ELSE
+    BEGIN
+        SET @inv_paid = @inv_total
+        SET @inv_status = 1 -- Paid
+    END
+
     UPDATE [Invoice]
-    SET [TotalAmount] = @inv_total, [PaidAmount] = @inv_total
+    SET [TotalAmount] = @inv_total, [PaidAmount] = @inv_paid, [PaymentStatus] = @inv_status
     WHERE [InvoiceID] = @inv_id
 
     SET @inv = @inv + 1
+END
+
+-- =============================================================================
+-- 22. RECEIPTS & RECEIPT DETAILS (Phieu thu tien & gach no hoa don)
+-- =============================================================================
+PRINT '22/32 - Dang tao Receipt & ReceiptDetail...'
+
+-- 1. Receipt 1 cho Customer 1 (itsephu): Tra 1.000.000 cho Invoice 1
+INSERT INTO [Receipt] ([CustomerID], [BranchID], [UserID], [TotalAmount], [PaymentMethod], [CreatedDate], [IsDeleted])
+VALUES (1, 1, 7, 1000000.00, 0, DATEADD(day, -24, GETDATE()), 0);
+DECLARE @rc1 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [ReceiptDetail] ([ReceiptID], [InvoiceID], [AmountApplied])
+VALUES (@rc1, 1, 1000000.00);
+
+-- 2. Receipt 2 cho Customer 2 (namphuits): Tra du 2.000.000 cho Invoice 3
+INSERT INTO [Receipt] ([CustomerID], [BranchID], [UserID], [TotalAmount], [PaymentMethod], [CreatedDate], [IsDeleted])
+VALUES (2, 1, 7, 2000000.00, 0, DATEADD(day, -20, GETDATE()), 0);
+DECLARE @rc2 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [ReceiptDetail] ([ReceiptID], [InvoiceID], [AmountApplied])
+VALUES (@rc2, 3, 2000000.00);
+
+-- 3. Receipt 3 cho Customer 2 (namphuits): Tra du 1.500.000 cho Invoice 4
+INSERT INTO [Receipt] ([CustomerID], [BranchID], [UserID], [TotalAmount], [PaymentMethod], [CreatedDate], [IsDeleted])
+VALUES (2, 1, 7, 1500000.00, 0, DATEADD(day, -8, GETDATE()), 0);
+DECLARE @rc3 BIGINT = SCOPE_IDENTITY();
+INSERT INTO [ReceiptDetail] ([ReceiptID], [InvoiceID], [AmountApplied])
+VALUES (@rc3, 4, 1500000.00);
+
+-- Receipts 4..200 cho cac khach hang khac
+DECLARE @rc INT = 4
+DECLARE @rc_cust BIGINT
+DECLARE @rc_branch BIGINT
+DECLARE @rc_user BIGINT
+DECLARE @rc_amt DECIMAL(18,2)
+DECLARE @rc_date DATETIME2
+DECLARE @rc_id BIGINT
+DECLARE @target_inv_id BIGINT
+DECLARE @target_inv_paid DECIMAL(18,2)
+
+WHILE @rc <= 200
+BEGIN
+    SET @rc_cust = ((@rc - 4) % 398) + 3
+    SET @rc_branch = ((@rc - 1) % 4) + 1
+    SET @rc_user = CASE @rc_branch WHEN 1 THEN 7 WHEN 2 THEN 8 WHEN 3 THEN 9 ELSE 10 END
+    SET @rc_amt = CAST((@rc * 75000) % 3000000 + 200000 AS DECIMAL(18,2))
+    SET @rc_date = DATEADD(day, - (200 - @rc), GETDATE())
+
+    INSERT INTO [Receipt] ([CustomerID], [BranchID], [UserID], [TotalAmount], [PaymentMethod], [CreatedDate], [IsDeleted])
+    VALUES (@rc_cust, @rc_branch, @rc_user, @rc_amt, 0, @rc_date, 0)
+    SET @rc_id = SCOPE_IDENTITY()
+
+    -- Tim 1 hoa don cua khach hang nay de gan vao ReceiptDetail
+    SELECT TOP 1 @target_inv_id = [InvoiceID], @target_inv_paid = [PaidAmount]
+    FROM [Invoice]
+    WHERE [CustomerID] = @rc_cust
+    ORDER BY [InvoiceID] ASC
+
+    IF @target_inv_id IS NOT NULL AND @target_inv_paid > 0
+    BEGIN
+        INSERT INTO [ReceiptDetail] ([ReceiptID], [InvoiceID], [AmountApplied])
+        VALUES (@rc_id, @target_inv_id, CASE WHEN @rc_amt <= @target_inv_paid THEN @rc_amt ELSE @target_inv_paid END)
+    END
+
+    SET @rc = @rc + 1
 END
 
 -- =============================================================================
@@ -1079,7 +1239,7 @@ DECLARE @sr_qty DECIMAL(18,2)
 
 WHILE @sr <= 50
 BEGIN
-    SET @sr_cust = ((@sr * 5) % 400) + 1
+    SET @sr_cust = ((@sr * 5) % 398) + 3
     SET @sr_user = 7 + ((@sr - 1) % 4)
     SET @sr_date = DATEADD(day, - (80 - @sr), GETDATE())
 
@@ -1178,13 +1338,11 @@ BEGIN
     VALUES (@sa_wh, @sa_user, @sa_st_id, N'Điều chỉnh cân bằng kho sau kiểm kê ' + CAST(@sa_st_id AS NVARCHAR), @sa_date, 1, DATEADD(hour, 1, @sa_date))
     SET @sa_id = SCOPE_IDENTITY()
 
-    -- Tao chi tiet theo StockTakeItem
     INSERT INTO [StockAdjustmentItem] ([StockAdjustmentID], [BatchID], [StockTakeItemID], [AdjustQuantity], [ReasonCode])
     SELECT @sa_id, sti.[BatchID], sti.[StockTakeItemID], sti.[DifferenceQuantity], N'REASON_STOCK_TAKE_DIFF'
     FROM [StockTakeItem] sti
     WHERE sti.[StockTakeID] = @sa_st_id
 
-    -- Cap nhat lai ton kho cho cac batch duoc dieu chinh
     UPDATE b
     SET b.[QuantityInStock] = b.[QuantityInStock] + sti.[DifferenceQuantity]
     FROM [Batch] b
@@ -1217,7 +1375,6 @@ BEGIN
     VALUES (@dr_wh, @dr_user, @dr_st_id, N'Tiêu hủy thuốc hết hạn/hỏng chất lượng số ' + CAST(@dr AS NVARCHAR), @dr_date, 1, DATEADD(hour, 2, @dr_date))
     SET @dr_id = SCOPE_IDENTITY()
 
-    -- Tao chi tiet theo StockTakeItem
     INSERT INTO [DestroyReceiptItem] ([DestroyReceiptID], [BatchID], [StockTakeItemID], [Quantity], [UnitCost], [ReasonCode])
     SELECT @dr_id, sti.[BatchID], sti.[StockTakeItemID], ABS(sti.[DifferenceQuantity]), gri.[UnitCost], N'REASON_EXPIRED_DAMAGED'
     FROM [StockTakeItem] sti
@@ -1225,7 +1382,6 @@ BEGIN
     JOIN [GoodsReceiptItem] gri ON b.[GoodsReceiptItemID] = gri.[GoodsReceiptItemID]
     WHERE sti.[StockTakeID] = @dr_st_id
 
-    -- Tru ton kho cho thuoc bi huy
     UPDATE b
     SET b.[QuantityInStock] = CASE WHEN b.[QuantityInStock] >= ABS(sti.[DifferenceQuantity]) THEN b.[QuantityInStock] - ABS(sti.[DifferenceQuantity]) ELSE 0 END
     FROM [Batch] b
@@ -1236,9 +1392,24 @@ BEGIN
 END
 
 -- =============================================================================
--- 28. CHAT CONVERSATION & CHAT MESSAGES (Hoi dap AI duoc ly & quan ly)
+-- 28. CUSTOMER WALLET HISTORY (Lich su nap / su dung vi khach hang)
 -- =============================================================================
-PRINT '28/32 - Dang tao ChatConversation & ChatMessage...'
+PRINT '28/32 - Dang tao CustomerWalletHistory...'
+IF OBJECT_ID(N'[CustomerWalletHistory]', N'U') IS NOT NULL
+BEGIN
+    EXEC(N'
+        INSERT INTO [CustomerWalletHistory] ([CustomerID], [TransactionType], [Amount], [RefType], [RefId], [CreateDate]) VALUES
+        (1, 0, 500000.00, 0, 1, DATEADD(day, -20, GETDATE())),
+        (1, 1, 500000.00, 1, 1, DATEADD(day, -15, GETDATE())),
+        (2, 0, 1000000.00, 0, 2, DATEADD(day, -18, GETDATE())),
+        (2, 1, 1000000.00, 1, 3, DATEADD(day, -12, GETDATE()));
+    ');
+END
+
+-- =============================================================================
+-- 29. CHAT CONVERSATION & CHAT MESSAGES (Hoi dap AI duoc ly & quan ly)
+-- =============================================================================
+PRINT '29/32 - Dang tao ChatConversation & ChatMessage...'
 IF OBJECT_ID(N'[ChatConversation]', N'U') IS NOT NULL AND OBJECT_ID(N'[ChatMessage]', N'U') IS NOT NULL
 BEGIN
     EXEC(N'
@@ -1273,9 +1444,9 @@ BEGIN
 END
 
 -- =============================================================================
--- 29. INVENTORY TRANSACTIONS (Lich su giao dich kho)
+-- 30. INVENTORY TRANSACTIONS (Lich su giao dich kho)
 -- =============================================================================
-PRINT '29/32 - Dang tao InventoryTransaction...'
+PRINT '30/32 - Dang tao InventoryTransaction...'
 IF OBJECT_ID(N'[InventoryTransaction]', N'U') IS NOT NULL
 BEGIN
     EXEC(N'
@@ -1286,9 +1457,9 @@ BEGIN
 END
 
 -- =============================================================================
--- 30. AUDIT LOG (Nhat ky thao tac he thong)
+-- 31. AUDIT LOG & DAM BAO TON KHO KHONG AM (Integrity Check)
 -- =============================================================================
-PRINT '30/32 - Dang tao AuditLog...'
+PRINT '31/32 - Dang tao AuditLog va kiem tra ton kho...'
 IF OBJECT_ID(N'[AuditLog]', N'U') IS NOT NULL
 BEGIN
     EXEC(N'
@@ -1299,10 +1470,6 @@ BEGIN
     ');
 END
 
--- =============================================================================
--- 31. DAM BAO TON KHO KHONG AM (Integrity Check)
--- =============================================================================
-PRINT '31/32 - Kiem tra va dam bao ton kho hop le...'
 UPDATE [Batch]
 SET [QuantityInStock] = 0
 WHERE [QuantityInStock] < 0
@@ -1326,14 +1493,32 @@ UNION ALL SELECT 'Medicine', COUNT(*) FROM [Medicine]
 UNION ALL SELECT 'GoodsReceipt', COUNT(*) FROM [GoodsReceipt]
 UNION ALL SELECT 'Batch', COUNT(*) FROM [Batch]
 UNION ALL SELECT 'Invoice', COUNT(*) FROM [Invoice]
+UNION ALL SELECT 'Receipt', COUNT(*) FROM [Receipt]
+UNION ALL SELECT 'CustomerDebtSummary', COUNT(*) FROM [CustomerDebtSummary]
 UNION ALL SELECT 'StockTake', COUNT(*) FROM [StockTake]
 UNION ALL SELECT 'StockAdjustment', COUNT(*) FROM [StockAdjustment]
 UNION ALL SELECT 'DestroyReceipt', COUNT(*) FROM [DestroyReceipt]
 UNION ALL SELECT 'Promotion', COUNT(*) FROM [Promotion]
 GO
 
+IF OBJECT_ID(N'[ReceiptDetail]', N'U') IS NOT NULL
+    EXEC(N'SELECT ''ReceiptDetail'' AS TableName, COUNT(*) AS TotalRecords FROM [ReceiptDetail]');
+IF OBJECT_ID(N'[CustomerWalletHistory]', N'U') IS NOT NULL
+    EXEC(N'SELECT ''CustomerWalletHistory'' AS TableName, COUNT(*) AS TotalRecords FROM [CustomerWalletHistory]');
 IF OBJECT_ID(N'[ChatConversation]', N'U') IS NOT NULL
     EXEC(N'SELECT ''ChatConversation'' AS TableName, COUNT(*) AS TotalRecords FROM [ChatConversation]');
 IF OBJECT_ID(N'[ChatMessage]', N'U') IS NOT NULL
     EXEC(N'SELECT ''ChatMessage'' AS TableName, COUNT(*) AS TotalRecords FROM [ChatMessage]');
+GO
+
+-- Kiem tra 2 customer dac biet (itsephu & namphuits):
+SELECT c.CustomerID, c.CustomerName, c.Email, c.WalletBalance,
+       ISNULL(SUM(i.TotalAmount), 0) AS TotalInvoiced,
+       ISNULL(SUM(i.PaidAmount), 0) AS TotalPaid,
+       ISNULL(cds.ClosingBalance, 0) AS LatestDebtBalance
+FROM [Customer] c
+LEFT JOIN [Invoice] i ON c.CustomerID = i.CustomerID
+LEFT JOIN [CustomerDebtSummary] cds ON c.CustomerID = cds.CustomerID AND cds.Year = YEAR(GETDATE()) AND cds.Month = MONTH(GETDATE())
+WHERE c.Email IN ('itsephu', 'namphuits')
+GROUP BY c.CustomerID, c.CustomerName, c.Email, c.WalletBalance, cds.ClosingBalance;
 GO

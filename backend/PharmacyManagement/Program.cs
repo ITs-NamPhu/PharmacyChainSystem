@@ -11,15 +11,21 @@ using PharmacyManagement.share;
 using PharmacyManagement.Services.Interfaces;
 using PharmacyManagement.Services.Implements;
 using PharmacyManagement.Services.BatchSelection;
+using PharmacyManagement.Services.Notifications;
 
 using PharmacyManagement.Repositories.Interfaces;
 using PharmacyManagement.Repositories.Implements;
+
 using FluentValidation;
 using PharmacyManagement.Validators.BusinessRule;
 using PharmacyManagement.Validators.FluentValidation.User;
 using PharmacyManagement.Validators.PermissionHandle;
+
 using PharmacyManagement.Handlers;
+
 using Microsoft.AspNetCore.Authorization;
+
+using Hangfire;
 
 namespace PharmacyManagement
 {
@@ -28,6 +34,8 @@ namespace PharmacyManagement
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddMemoryCache();
 
             // Add services to the container.
             builder.Services.AddDbContext<PharmacySystemDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("PharSystemConnection")));
@@ -145,7 +153,7 @@ namespace PharmacyManagement
                                 StatusCode = 403,
                                 EM = "You do not have permission to access this resource.",
                                 DT = null,
-                                EC= -1
+                                EC = -1
                             };
 
                             return context.Response.WriteAsJsonAsync(response);
@@ -180,6 +188,8 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IStockTakeRepository, StockTakeRepository>();
             builder.Services.AddScoped<IStockAdjustmentRepository, StockAdjustmentRepository>();
             builder.Services.AddScoped<IDestroyReceiptRepository, DestroyReceiptRepository>();
+            builder.Services.AddScoped<ICustomerDebtSummaryRepository, CustomerDebtSummaryRepository>();
+            builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 
             // Service
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -204,7 +214,12 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IStockTakeService, StockTakeService>();
             builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
             builder.Services.AddScoped<IDestroyReceiptService, DestroyReceiptService>();
-
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IDebtSummaryService, DebtSummaryService>();
+            builder.Services.AddScoped<DebtSummaryService>();
+            builder.Services.AddScoped<IReceiptService, ReceiptService>();
+            builder.Services.AddScoped<IReconciliationService, ReconciliationService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
             builder.Services.AddScoped<ManualBatchSelectionStrategy>();
@@ -238,6 +253,10 @@ namespace PharmacyManagement
 
             builder.Services.AddControllers();
 
+            // Hangfire
+            builder.Services.AddHangfire(config =>
+                config.UseSqlServerStorage(builder.Configuration.GetConnectionString("PharSystemConnection")));
+            builder.Services.AddHangfireServer();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -258,6 +277,34 @@ namespace PharmacyManagement
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.UseHangfireDashboard("/hangfire");
+
+            // Job chạy vào lúc 00:01 sáng ngày mùng 1 hàng tháng
+            RecurringJob.AddOrUpdate<DebtSummaryService>(
+                "monthly-debt-closing",
+                service => service.ProcessMonthlyClosingAsync(
+                    DateTime.Now.AddMonths(-1).Year,
+                    DateTime.Now.AddMonths(-1).Month),
+                "1 0 1 * *",
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.Local
+                }
+                );
+
+            // Job đối soát chạy lúc 2h sáng mỗi ngày:
+            // so sánh Invoice.PaidAmount với SUM(ReceiptDetail.AmountApplied)
+            // để phát hiện sớm mọi sai lệch do lỗi logic code
+            RecurringJob.AddOrUpdate<IReconciliationService>(
+                "daily-reconciliation",
+                service => service.ReconcileAsync(),
+                "0 2 * * *",
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.Local
+                }
+                );
 
             if (app.Environment.IsEnvironment("Docker"))
             {
