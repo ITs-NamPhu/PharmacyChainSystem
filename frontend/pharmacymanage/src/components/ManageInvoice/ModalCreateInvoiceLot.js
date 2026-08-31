@@ -35,6 +35,11 @@ const ModalCreateInvoiceLot = (props) => {
     const [note, setNote] = useState('');
     const [createdByUserID, setCreatedByUserID] = useState('');
 
+    // state thanh toán
+    const [customerWalletBalance, setCustomerWalletBalance] = useState(0);
+    const [useWallet, setUseWallet] = useState(false);
+    const [paidAmount, setPaidAmount] = useState(0);
+
     // state for dropdowns
     const [listCustomer, setListCustomer] = useState([]);
     const [listMedicine, setListMedicine] = useState([]);
@@ -81,6 +86,17 @@ const ModalCreateInvoiceLot = (props) => {
         setNote('');
         setCreatedByUserID('');
         setInvoiceItems([]);
+        setCustomerWalletBalance(0);
+        setUseWallet(false);
+        setPaidAmount(0);
+    };
+
+    // handle khi thay đổi khách hàng -> cập nhật số dư ví để hiển thị badge + thanh toán
+    const handleCustomerChange = (value) => {
+        setCustomerID(value);
+        const customer = listCustomer.find(c => c.customerID === +value);
+        setCustomerWalletBalance(customer ? +(customer.walletBalance || 0) : 0);
+        setUseWallet(false);
     };
 
     // handle add hóa đơn chi tiết -> copy items và thêm 1 item mới vào cuối
@@ -174,6 +190,19 @@ const ModalCreateInvoiceLot = (props) => {
         return invoiceItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
     };
 
+    // số tiền sẽ trả bằng ví khi khách đồng ý (auto-dùng toàn bộ ví, tối đa = tổng tiền)
+    const getWalletAmount = () => {
+        if (!useWallet) return 0;
+        const total = getTotalAmount();
+        return Math.min(customerWalletBalance, total);
+    };
+
+    // số nợ còn lại sau khi trừ ví và tiền mặt
+    const getRemainingDebt = () => {
+        const cash = +paidAmount || 0;
+        return Math.max(0, getTotalAmount() - getWalletAmount() - cash);
+    };
+
     // handle submit hóa đơn
     const handleSubmitInvoice = async () => {
         if (!customerID || customerID === '') {
@@ -216,12 +245,23 @@ const ModalCreateInvoiceLot = (props) => {
             UnitPrice: +item.unitPrice
         }));
 
+        const walletAmount = getWalletAmount();
+        const cashPaid = +paidAmount || 0;
+        const total = getTotalAmount();
+
+        if (cashPaid + walletAmount > total) {
+            toast.error('Số tiền trả (ví + tiền mặt) không được vượt quá tổng tiền hóa đơn');
+            return;
+        }
+
         let res = await CreateInvoice(
             +customerID,
             note,
             canChangeUser && createdByUserID ? +createdByUserID : null,
             submitItems,
-            'Manual'
+            'Manual',
+            cashPaid,
+            walletAmount
         );
 
         if (!res || res.ec !== 0) {
@@ -250,7 +290,7 @@ const ModalCreateInvoiceLot = (props) => {
                             <form className='row g-3'>
                                 <div className="form-group col-md-6">
                                     <label>Khách hàng <span className="text-danger">*</span></label>
-                                    <select className="form-control" value={customerID} onChange={(event) => setCustomerID(event.target.value)}>
+                                    <select className="form-control" value={customerID} onChange={(event) => handleCustomerChange(event.target.value)}>
                                         <option value="">-- Chọn khách hàng --</option>
                                         {listCustomer && listCustomer.length > 0 &&
                                             listCustomer.map((item, index) => (
@@ -258,6 +298,11 @@ const ModalCreateInvoiceLot = (props) => {
                                             ))
                                         }
                                     </select>
+                                    {customerWalletBalance > 0 && (
+                                        <div className="customer-wallet-alert mt-2">
+                                            <span className="badge bg-warning">⚠️ Khách hàng đang có {formatPrice(customerWalletBalance)}đ tiền thừa trong ví</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="form-group col-md-6">
                                     <label>Người lập</label>
@@ -283,6 +328,59 @@ const ModalCreateInvoiceLot = (props) => {
                                         placeholder="Nhập ghi chú (không bắt buộc)"
                                         onChange={(event) => setNote(event.target.value)}
                                     />
+                                </div>
+                                <div className="col-12 payment-section">
+                                    <h6 className="fw-bold mb-2">Thanh toán</h6>
+                                    <div className="row g-3">
+                                        <div className="col-md-4">
+                                            <label className="d-flex align-items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    className="form-check-input"
+                                                    checked={useWallet}
+                                                    disabled={customerWalletBalance <= 0}
+                                                    onChange={(e) => setUseWallet(e.target.checked)}
+                                                />
+                                                <span>Sử dụng ví thanh toán</span>
+                                            </label>
+                                            <div className="text-muted small">
+                                                {customerWalletBalance > 0 ? `Số dư ví: ${formatPrice(customerWalletBalance)}đ` : 'Khách không có tiền thừa trong ví'}
+                                            </div>
+                                            {useWallet && (
+                                                <div className="wallet-use-info mt-1">
+                                                    Sẽ trả bằng ví: <span className="fw-bold text-success">{formatPrice(getWalletAmount())}đ</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label>Trả trước bằng tiền mặt (₫)</label>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                min="0"
+                                                value={paidAmount}
+                                                onChange={(event) => setPaidAmount(event.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4 payment-summary">
+                                            <div className="d-flex justify-content-between">
+                                                <span>Tổng tiền hàng:</span>
+                                                <span className="fw-bold">{formatPrice(getTotalAmount())}đ</span>
+                                            </div>
+                                            <div className="d-flex justify-content-between text-success">
+                                                <span>Trả bằng ví:</span>
+                                                <span className="fw-bold">-{formatPrice(getWalletAmount())}đ</span>
+                                            </div>
+                                            <div className="d-flex justify-content-between">
+                                                <span>Trả tiền mặt:</span>
+                                                <span className="fw-bold">-{formatPrice(+paidAmount || 0)}đ</span>
+                                            </div>
+                                            <div className="d-flex justify-content-between fw-bold">
+                                                <span>Còn nợ:</span>
+                                                <span className="text-warning">{formatPrice(getRemainingDebt())}đ</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </Tab>

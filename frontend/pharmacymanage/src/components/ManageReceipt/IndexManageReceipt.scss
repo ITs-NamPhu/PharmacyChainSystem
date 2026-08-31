@@ -1,0 +1,97 @@
+.modal-receipt-detail {
+    .receipt-summary-card {
+        background-color: #f8fbf9;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-bottom: 18px;
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+
+            & + .summary-row {
+                margin-top: 4px;
+            }
+
+            .summary-label {
+                font-size: 14px;
+                color: var(--text-muted);
+            }
+
+            .summary-value {
+                font-size: 15px;
+                font-weight: 600;
+                color: var(--text);
+                font-family: var(--font-mono);
+            }
+
+            &.summary-divider {
+                border-top: 1px dashed var(--border);
+                border-radius: 0;
+                margin-top: 6px;
+                padding-top: 12px;
+            }
+
+            .summary-total {
+                font-size: 18px;
+                font-weight: 700;
+            }
+        }
+
+        .summary-row.receipt-wallet {
+            background-color: var(--ok-soft);
+            border: 1px solid var(--ok);
+            margin-top: 8px;
+
+            .summary-label,
+            .summary-value {
+                color: var(--ok);
+            }
+
+            .summary-value {
+                font-size: 17px;
+            }
+        }
+
+        .summary-row.receipt-wallet-zero {
+            background-color: #f8f9fa;
+            border: 1px dashed var(--border);
+            margin-top: 8px;
+
+            .summary-label,
+            .summary-value {
+                color: var(--text-faint);
+            }
+        }
+
+        .summary-row.receipt-debt {
+            background-color: var(--warn-soft);
+
+            .summary-label,
+            .summary-value {
+                color: var(--warn);
+            }
+        }
+    }
+
+    .receipt-details-table {
+        .table {
+            margin-bottom: 0;
+
+            th {
+                font-size: 13px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+            td {
+                font-size: 13px;
+                vertical-align: middle;
+            }
+        }
+    }
+}

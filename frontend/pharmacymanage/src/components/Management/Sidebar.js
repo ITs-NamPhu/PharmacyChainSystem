@@ -95,6 +95,12 @@ const Sidebar = (props) => {
                                     <span>Đơn thuốc</span>
                                 </a>
                             )}
+                            {canAccess('managereceipt', roleName) && (
+                                <a className="nav-item" onClick={() => navigate('/admin/managereceipt')}>
+                                    <svg className="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    <span>Phiếu thu</span>
+                                </a>
+                            )}
                             {canAccess('managecustomer', roleName) && (
                                 <a className="nav-item" href="#">
                                     <svg className="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" /><path d="M5 20c0-3.9 3.13-7 7-7s7 3.1 7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>

@@ -26,6 +26,39 @@
         }
     }
 
+    .customer-wallet-alert {
+        .badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b4e10;
+        }
+    }
+
+    .payment-section {
+        background-color: #f8f9fa;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin-top: 8px;
+
+        .payment-summary {
+            background-color: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            font-size: 14px;
+
+            .fw-bold {
+                font-family: var(--font-mono);
+            }
+        }
+
+        .wallet-use-info {
+            font-size: 13px;
+            color: var(--ok);
+        }
+    }
+
     .invoice-items-tab {
         .table {
             th {

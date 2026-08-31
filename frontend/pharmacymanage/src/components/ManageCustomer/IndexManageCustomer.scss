@@ -16,3 +16,31 @@
         margin: 10px 0;
     }
 }
+
+.modal-customer-wallet {
+    .wallet-balance-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--ok-soft);
+        border: 1px solid var(--ok);
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+
+        .wallet-balance-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ok);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .wallet-balance-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ok);
+            font-family: var(--font-mono);
+        }
+    }
+}
