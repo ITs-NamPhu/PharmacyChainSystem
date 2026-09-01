@@ -31,7 +31,6 @@ const instance = axios.create({
 
 // Add a request interceptor
 instance.interceptors.request.use(function (config) {
-    console.log(process.env.REACT_APP_API_URL);
     if (!config.url.includes("api/auth/refreshtoken")) {
         const access_token = store?.getState().user.account.access_token;
         config.headers["Authorization"] = "Bearer " + access_token;
@@ -80,7 +79,6 @@ instance.interceptors.response.use(function (response) {
     const originalRequest = error.config;
 
     if (error.response?.data?.ec === -999 && !originalRequest._retry) {
-
         if (isRefreshing) {
             return new Promise((resolve) => {
                 addRefreshSubscriber((accessToken) => {
@@ -101,6 +99,8 @@ instance.interceptors.response.use(function (response) {
             if (res && res.ec === 0) {
                 store.dispatch(doRefreshToken(res));
                 const accessToken = res.dt.accessToken;
+
+                isRefreshing = false;
                 onRefreshed(accessToken);
 
                 originalRequest.headers["Authorization"] = "Bearer " + accessToken;
