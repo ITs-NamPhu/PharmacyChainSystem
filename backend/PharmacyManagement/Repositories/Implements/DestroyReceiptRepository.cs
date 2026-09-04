@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using PharmacyManagement.DTOs.DestroyReceipt;
 using PharmacyManagement.Models;
 using PharmacyManagement.Repositories.Interfaces;
 
@@ -28,13 +29,9 @@ namespace PharmacyManagement.Repositories.Implements
                 .FirstOrDefaultAsync(dr => dr.DestroyReceiptID == id);
         }
 
-        public async Task<List<DestroyReceipt>> GetAllAsync(int skip, int take, long warehouseId)
+        public async Task<List<DestroyReceiptResponse>> GetAllAsync(int skip, int take, long warehouseId)
         {
-            var query = _context.DestroyReceipt
-                .Include(dr => dr.WareHouse)
-                .Include(dr => dr.User)
-                .Include(dr => dr.DestroyReceiptItem)
-                .AsQueryable();
+            var query = _context.DestroyReceipt.AsQueryable();
 
             if (warehouseId > 0)
                 query = query.Where(dr => dr.WarehouseID == warehouseId);
@@ -43,6 +40,22 @@ namespace PharmacyManagement.Repositories.Implements
                 .OrderByDescending(dr => dr.CreatedAt)
                 .Skip(skip)
                 .Take(take)
+                .Select(dr => new DestroyReceiptResponse
+                {
+                    DestroyReceiptID = dr.DestroyReceiptID,
+                    WarehouseID = dr.WarehouseID,
+                    WarehouseName = dr.WareHouse != null ? dr.WareHouse.WarehouseName : string.Empty,
+                    StockTakeID = dr.StockTakeID,
+                    UserID = dr.UserID,
+                    UserName = dr.User != null ? dr.User.FullName : string.Empty,
+                    Note = dr.Note,
+                    CreatedAt = dr.CreatedAt,
+                    Status = dr.Status.ToString(),
+                    ApprovedBy = dr.ApprovedBy,
+                    ApprovedAt = dr.ApprovedAt,
+                    IsFromStockTake = dr.StockTakeID.HasValue,
+                    ItemCount = dr.DestroyReceiptItem != null ? dr.DestroyReceiptItem.Count() : 0
+                })
                 .ToListAsync();
         }
 
@@ -57,6 +70,11 @@ namespace PharmacyManagement.Repositories.Implements
         public async Task AddAsync(DestroyReceipt entity)
         {
             await _context.DestroyReceipt.AddAsync(entity);
+        }
+
+        public void Delete(DestroyReceipt entity)
+        {
+            _context.DestroyReceipt.Remove(entity);
         }
 
         public async Task<WareHouse?> GetWarehouseByIdAsync(long warehouseId)

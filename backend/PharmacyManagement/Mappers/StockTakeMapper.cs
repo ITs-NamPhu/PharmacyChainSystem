@@ -13,10 +13,7 @@ namespace PharmacyManagement.Mappers
                 UserID = userId,
                 CreatedAt = DateTime.Now,
                 Note = request.Note ?? string.Empty,
-                IsBalance = StockTakeResult.Difference,
-                Status = StockTakeStatus.Draft,
-                IsAdjust = false,
-                IsDestroy = false
+                Status = StatusTicket.PENDING
             };
         }
 
@@ -32,8 +29,25 @@ namespace PharmacyManagement.Mappers
                 SystemQuantity = systemQuantity,
                 ActualQuantity = request.ActualQuantity,
                 DifferenceQuantity = request.ActualQuantity - systemQuantity,
-                IsAdjust = request.IsAdjust,
-                IsDestroy = request.IsDestroy
+                AdjustQuantity = request.AdjustQuantity,
+                DestroyQuantity = request.DestroyQuantity
+            };
+        }
+
+        public static StockTakeItem ToEntity(
+            this UpdateStockTakeItemRequest request,
+            long stockTakeId,
+            decimal systemQuantity)
+        {
+            return new StockTakeItem
+            {
+                StockTakeID = stockTakeId,
+                BatchID = request.BatchID,
+                SystemQuantity = systemQuantity,
+                ActualQuantity = request.ActualQuantity,
+                DifferenceQuantity = request.ActualQuantity - systemQuantity,
+                AdjustQuantity = request.AdjustQuantity,
+                DestroyQuantity = request.DestroyQuantity
             };
         }
 
@@ -48,10 +62,7 @@ namespace PharmacyManagement.Mappers
                 UserName = entity.User?.FullName ?? string.Empty,
                 CreatedAt = entity.CreatedAt,
                 Note = entity.Note,
-                IsBalance = entity.IsBalance.ToString(),
                 Status = entity.Status.ToString(),
-                IsAdjust = entity.IsAdjust,
-                IsDestroy = entity.IsDestroy,
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
                 ItemCount = entity.StockTakeItem?.Count ?? 0
@@ -69,12 +80,11 @@ namespace PharmacyManagement.Mappers
                 UserName = entity.User?.FullName ?? string.Empty,
                 CreatedAt = entity.CreatedAt,
                 Note = entity.Note,
-                IsBalance = entity.IsBalance.ToString(),
                 Status = entity.Status.ToString(),
-                IsAdjust = entity.IsAdjust,
-                IsDestroy = entity.IsDestroy,
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
+                StockAdjustmentID = entity.StockAdjustment?.StockAdjustmentID,
+                DestroyReceiptID = entity.DestroyReceipt?.DestroyReceiptID,
                 Items = entity.StockTakeItem?.Select(item => new StockTakeItemDetailResponse
                 {
                     StockTakeItemID = item.StockTakeItemID,
@@ -85,8 +95,8 @@ namespace PharmacyManagement.Mappers
                     SystemQuantity = item.SystemQuantity,
                     ActualQuantity = item.ActualQuantity,
                     DifferenceQuantity = item.DifferenceQuantity,
-                    IsAdjust = item.IsAdjust,
-                    IsDestroy = item.IsDestroy
+                    AdjustQuantity = item.AdjustQuantity,
+                    DestroyQuantity = item.DestroyQuantity
                 }).ToList() ?? new List<StockTakeItemDetailResponse>()
             };
         }

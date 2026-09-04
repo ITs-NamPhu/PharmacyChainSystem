@@ -12,6 +12,9 @@ namespace PharmacyManagement.DTOs.GoodsReceipt
         public decimal TotalAmount { get; set; }
         public decimal PaidAmount { get; set; }
         public string Note { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public long? ApprovedBy { get; set; }
+        public DateTime? ApprovedAt { get; set; }
         public List<GoodsReceiptItemDetailResponse> Items { get; set; } = new();
     }
 

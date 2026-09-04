@@ -211,15 +211,7 @@ const ModalCreateStockAdjustment = (props) => {
                                 <td>{item.systemQuantity}</td>
                                 <td>{item.actualQuantity}</td>
                                 <td>
-                                    <input
-                                        type="number"
-                                        className="form-control form-control-sm"
-                                        value={item.adjustQuantity}
-                                        placeholder="SL điều chỉnh"
-                                        onChange={(event) =>
-                                            handleChangeItem(index, 'adjustQuantity', event.target.value)
-                                        }
-                                    />
+                                    {item.adjustQuantity}
                                 </td>
                                 <td>
                                     <input

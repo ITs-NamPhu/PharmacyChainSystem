@@ -9,12 +9,12 @@ import TableStockTake from './TableStockTake';
 import ModalCreateStockTake from './ModalCreateStockTake';
 import ModalViewStockTake from './ModalViewStockTake';
 import ModalCompleteStockTake from './ModalCompleteStockTake';
-import ModalCancelStockTake from './ModalCancelStockTake';
-import ModalApproveStockTake from './ModalApproveStockTake';
+import ModalUpdateStockTake from './ModalUpdateStockTake';
+import StatusActionModal from '../../common/StatusActionModal';
 
 import './IndexManageStockTake.scss'
 
-import { getAllStockTakePag, getWarehouseByBranch } from '../../../services/apiService';
+import { getAllStockTakePag, getWarehouseByBranch, ApproveStockTake, RejectStockTake, DeleteStockTake } from '../../../services/apiService';
 
 const IndexStockTake = (props) => {
 
@@ -37,11 +37,10 @@ const IndexStockTake = (props) => {
     const [showModalCompleteStockTake, setShowModalCompleteStockTake] = useState(false);
     const [dataComplete, setDataComplete] = useState({});
 
-    const [showModalCancelStockTake, setShowModalCancelStockTake] = useState(false);
-    const [dataCancel, setDataCancel] = useState({});
+    const [showModalUpdateStockTake, setShowModalUpdateStockTake] = useState(false);
+    const [dataUpdate, setDataUpdate] = useState({});
 
-    const [showModalApproveStockTake, setShowModalApproveStockTake] = useState(false);
-    const [dataApprove, setDataApprove] = useState({});
+    const [actionModal, setActionModal] = useState({ show: false, mode: '', record: {} });
 
     useEffect(() => {
         fetchWarehouse();
@@ -49,7 +48,6 @@ const IndexStockTake = (props) => {
 
     const fetchWarehouse = async () => {
         let wId = 0;
-
 
         let res = await getWarehouseByBranch(currentBranchId, 1, 10);
 
@@ -84,13 +82,31 @@ const IndexStockTake = (props) => {
         setShowModalCompleteStockTake(!showModalCompleteStockTake);
         setDataComplete(stockTake);
     }
-    const handleCancelStockTake = (stockTake) => {
-        setShowModalCancelStockTake(!showModalCancelStockTake);
-        setDataCancel(stockTake);
+    const handleUpdateStockTake = (stockTake) => {
+        setShowModalUpdateStockTake(!showModalUpdateStockTake);
+        setDataUpdate(stockTake);
     }
     const handleApproveStockTake = (stockTake) => {
-        setShowModalApproveStockTake(!showModalApproveStockTake);
-        setDataApprove(stockTake);
+        setActionModal({ show: true, mode: 'approve', record: stockTake });
+    }
+    const handleRejectStockTake = (stockTake) => {
+        setActionModal({ show: true, mode: 'reject', record: stockTake });
+    }
+    const handleDeleteStockTake = (stockTake) => {
+        setActionModal({ show: true, mode: 'delete', record: stockTake });
+    }
+
+    const confirmAction = async (record) => {
+        const { mode } = actionModal;
+        let call;
+        if (mode === 'approve') call = ApproveStockTake(record.stockTakeID);
+        else if (mode === 'reject') call = RejectStockTake(record.stockTakeID);
+        else if (mode === 'delete') call = DeleteStockTake(record.stockTakeID);
+        const res = await call;
+        if (!res || res.ec !== 0) {
+            throw new Error(res?.em || 'Thao tác thất bại');
+        }
+        await fetchStockTake(1, warehouseID);
     }
 
     const getWarehouseNameById = (id) => {
@@ -114,7 +130,7 @@ const IndexStockTake = (props) => {
                             {warehouseList.map((warehouse) => (
                                 <Dropdown.Item
                                     key={warehouse.warehouseID}
-                                    onClick={() => setWarehouseID(warehouse.warehouseID)}
+                                    onClick={() => { setWarehouseID(warehouse.warehouseID); fetchStockTake(1, warehouse.warehouseID); }}
                                 >
                                     {warehouse.warehouseName}
                                 </Dropdown.Item>
@@ -134,8 +150,10 @@ const IndexStockTake = (props) => {
 
                         handleViewStockTake={handleViewStockTake}
                         handleCompleteStockTake={handleCompleteStockTake}
-                        handleCancelStockTake={handleCancelStockTake}
+                        handleUpdateStockTake={handleUpdateStockTake}
                         handleApproveStockTake={handleApproveStockTake}
+                        handleRejectStockTake={handleRejectStockTake}
+                        handleDeleteStockTake={handleDeleteStockTake}
 
                         pageCount={pageCount}
                         currentPage={currentPage}
@@ -159,16 +177,20 @@ const IndexStockTake = (props) => {
                         dataComplete={dataComplete}
                     />
 
-                    <ModalCancelStockTake
-                        show={showModalCancelStockTake} setShow={setShowModalCancelStockTake}
+                    <ModalUpdateStockTake
+                        show={showModalUpdateStockTake} setShow={setShowModalUpdateStockTake}
                         fetchStockTake={fetchStockTake}
-                        dataCancel={dataCancel}
+                        listWarehouse={warehouseList}
+                        dataUpdate={dataUpdate}
                     />
 
-                    <ModalApproveStockTake
-                        show={showModalApproveStockTake} setShow={setShowModalApproveStockTake}
-                        fetchStockTake={fetchStockTake}
-                        dataApprove={dataApprove}
+                    <StatusActionModal
+                        show={actionModal.show}
+                        setShow={(v) => setActionModal(prev => ({ ...prev, show: v }))}
+                        mode={actionModal.mode}
+                        entityName="phiếu kiểm kê"
+                        record={actionModal.record}
+                        onConfirm={confirmAction}
                     />
                 </div>
             </div>

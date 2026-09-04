@@ -1,4 +1,5 @@
 import ReactPaginate from "react-paginate";
+import { getStatusBadge } from '../../utils/statusTicket';
 
 const TableGoodsReceipt = (props) => {
     const { listGoodsReceipt, pageCount } = props;
@@ -18,20 +19,27 @@ const TableGoodsReceipt = (props) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     }
 
+    const canApprove = (value) => value.status === "PENDING";
+    const canReject = (value) => value.status === "PENDING";
+    const canComplete = (value) => value.status === "APPROVED";
+    const canUpdate = (value) => value.status === "REJECTED";
+    const canDelete = (value) => value.status === "PENDING" || value.status === "REJECTED";
+
     return (
         <>
             <table className="table table-hover table-bordered">
                 <thead>
                     <tr scope="col">
                         <td>ID</td>
-                        <td>Receipt Number</td>
-                        <td>Supplier</td>
-                        <td>User</td>
-                        <td>Date</td>
-                        <td>Total Amount</td>
-                        <td>Paid Amount</td>
-                        <td>Note</td>
-                        <td>Actions</td>
+                        <td>Số phiếu</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Người tạo</td>
+                        <td>Ngày nhập</td>
+                        <td>Tổng tiền</td>
+                        <td>Đã trả</td>
+                        <td>Ghi chú</td>
+                        <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
 
@@ -48,10 +56,25 @@ const TableGoodsReceipt = (props) => {
                                     <td>{formatCurrency(value.totalAmount)}</td>
                                     <td>{formatCurrency(value.paidAmount)}</td>
                                     <td>{value.note}</td>
+                                    <td>{getStatusBadge(value.status)}</td>
                                     <td>
-                                        <button className="btn btn-secondary">View</button>
-                                        <button className="btn btn-warning mx-3" onClick={() => props.handleUpdateGoodsReceipt(value)}>Update</button>
-                                        <button className="btn btn-danger" onClick={() => props.handleDeleteGoodsReceipt(value)}>Delete</button>
+                                        <button className="btn btn-secondary btn-sm"
+                                            onClick={() => props.handleViewGoodsReceipt(value)}>View</button>
+                                        {canApprove(value) &&
+                                            <button className="btn btn-success btn-sm mx-1"
+                                                onClick={() => props.handleApproveGoodsReceipt(value)}>Duyệt</button>}
+                                        {canReject(value) &&
+                                            <button className="btn btn-danger btn-sm"
+                                                onClick={() => props.handleRejectGoodsReceipt(value)}>Từ chối</button>}
+                                        {canComplete(value) &&
+                                            <button className="btn btn-primary btn-sm mx-1"
+                                                onClick={() => props.handleCompleteGoodsReceipt(value)}>Nhập kho</button>}
+                                        {canUpdate(value) &&
+                                            <button className="btn btn-warning btn-sm mx-1 text-dark"
+                                                onClick={() => props.handleUpdateGoodsReceipt(value)}>Sửa phiếu</button>}
+                                        {canDelete(value) &&
+                                            <button className="btn btn-outline-danger btn-sm mx-1"
+                                                onClick={() => props.handleDeleteGoodsReceipt(value)}>Xóa</button>}
                                     </td>
                                 </tr>
                             )
@@ -59,7 +82,7 @@ const TableGoodsReceipt = (props) => {
                     }
                     {listGoodsReceipt && listGoodsReceipt.length === 0 &&
                         <tr>
-                            <td colSpan={9}>"Not found goods receipt"</td>
+                            <td colSpan={10}>"Not found goods receipt"</td>
                         </tr>
                     }
                 </tbody>

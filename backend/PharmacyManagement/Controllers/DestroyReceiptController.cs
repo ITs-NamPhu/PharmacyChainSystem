@@ -25,13 +25,49 @@ namespace PharmacyManagement.Controllers
             return Success(result, "Create destroy receipt successfully.");
         }
 
-        [HttpPost("{id}/approve")]
+        [HttpPut("{id}")]
+        [HasPermission("DESTROY_CREATE")]
+        public async Task<IActionResult> Update(long id, UpdateDestroyReceiptRequest request)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.UpdateAsync(id, request, userId);
+            return Success(result, "Update destroy receipt successfully.");
+        }
+
+        [HttpPut("{id}/complete")]
+        [HasPermission("DESTROY_CREATE")]
+        public async Task<IActionResult> Complete(long id)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.CompleteAsync(id, userId);
+            return Success(result, "Complete destroy receipt successfully.");
+        }
+
+        [HttpPut("{id}/approve")]
         [HasPermission("DESTROY_APPROVE")]
         public async Task<IActionResult> Approve(long id)
         {
             var userId = GetUserIdFromToken();
             await _service.ApproveAsync(id, userId);
             return Success(null, "Approve destroy receipt successfully.");
+        }
+
+        [HttpPut("{id}/reject")]
+        [HasPermission("DESTROY_APPROVE")]
+        public async Task<IActionResult> Reject(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.RejectAsync(id, userId);
+            return Success(null, "Reject destroy receipt successfully.");
+        }
+
+        [HttpDelete("{id}")]
+        [HasPermission("DESTROY_DELETE")]
+        public async Task<IActionResult> Delete(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.DeleteAsync(id, userId);
+            return Success(null, "Delete destroy receipt successfully.");
         }
 
         [HttpGet("{id}")]

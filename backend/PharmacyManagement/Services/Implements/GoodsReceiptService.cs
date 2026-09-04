@@ -68,13 +68,10 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<GoodsReceiptResponse> CreateAsync(CreateGoodsReceiptRequest request, long userId, long branchId)
         {
-            // validate nhà cung cấp
             await _businessValidator.ValidateSupplierExistsAsync(request.SupplierID);
 
-            // Khởi tạo dic cho cache thuốc và đơn vị tính để tránh truy vấn nhiều lần
             var medicineCache = new Dictionary<long, Medicine>();
             var unitCache = new Dictionary<long, Unit>();
-
 
             foreach (var item in request.Items)
             {
@@ -85,6 +82,7 @@ namespace PharmacyManagement.Services.Implements
             var receiptNumber = await _repository.GetNextReceiptNumberAsync();
             var goodsReceipt = request.ToEntity(userId, branchId);
             goodsReceipt.ReceiptNumber = receiptNumber;
+            goodsReceipt.Status = StatusTicket.PENDING;
 
             await _repository.AddAsync(goodsReceipt);
             await _repository.SaveChangesAsync();
@@ -130,7 +128,6 @@ namespace PharmacyManagement.Services.Implements
             var warehouses = await _warehouseRepository.GetByBranchAsync(branchId, 0, 1);
             var warehouseId = warehouses.FirstOrDefault()?.WarehouseID ?? 0;
 
-            // duyệt qua từng item trong receiptItems để tạo batch
             foreach (var (itemRequest, goodsReceiptItem) in receiptItems)
             {
                 var batch = new Batch
@@ -155,9 +152,6 @@ namespace PharmacyManagement.Services.Implements
 
         public async Task<GoodsReceiptResponse> UpdateAsync(long id, UpdateGoodsReceiptRequest request, long userId, long branchId)
         {
-            // 1. Validate chung
-            // Phiếu nhập tồn tại và thuộc chi nhánh của người sửa, nhà cung cấp
-            // Validate các thuốc, đơn vị tính trong items
             var goodsReceipt = await _repository.GetByIdAsync(id);
             if (goodsReceipt == null)
                 throw new BusinessException("Goods receipt not found.", "GR002", StatusCodes.Status404NotFound);
@@ -165,9 +159,10 @@ namespace PharmacyManagement.Services.Implements
             if (goodsReceipt.BranchID != branchId)
                 throw new BusinessException("Goods receipt not found in this branch.", "GR003", StatusCodes.Status403Forbidden);
 
+            StatusTicketValidator.ValidateForUpdate(goodsReceipt.Status, "phiếu nhập kho");
+
             await _businessValidator.ValidateSupplierExistsAsync(request.SupplierID);
 
-            // không cho phép gửi trùng GoodsReceiptItemID trong request
             var duplicateItemIds = request.Items
                                         .Where(i => i.GoodsReceiptItemID.HasValue)
                                         .GroupBy(i => i.GoodsReceiptItemID!.Value)
@@ -178,7 +173,6 @@ namespace PharmacyManagement.Services.Implements
             if (duplicateItemIds.Any())
                 throw new BusinessException("Duplicate GoodsReceiptItemID in request.", "GR013", StatusCodes.Status400BadRequest);
 
-            // validate + cache thuốc, đơn vị tính trong items
             var medicineCache = new Dictionary<long, Medicine>();
             var unitCache = new Dictionary<long, Unit>();
             foreach (var item in request.Items)
@@ -187,26 +181,16 @@ namespace PharmacyManagement.Services.Implements
                 await GetOrCacheUnitAsync(item.UnitID, unitCache);
             }
 
-            // chuyển các thông tin từ request sang entity
             request.ApplyTo(goodsReceipt);
+            goodsReceipt.Status = StatusTicket.PENDING;
 
-
-            // 2. Phân loại items
-            // Lấy danh sách items của phiếu nhập từ database
             var existingItems = goodsReceipt.GoodsReceiptItem?.ToList() ?? new List<GoodsReceiptItem>();
 
-            // Lấy danh sách items trong REQUEST có GoodsReceiptItemID (các items cần update)
             var requestItemIds = request.Items
                                         .Where(i => i.GoodsReceiptItemID.HasValue)
                                         .Select(i => i.GoodsReceiptItemID!.Value)
                                         .ToHashSet();
 
-
-            // 3. Validate xóa items
-            // case: nếu item có trong database nhưng không có trong request (người dùng muốn xóa item đó)
-            // Xử lý xóa item logic:
-            //                      nếu item đã được xuất bán => không cho phép xóa,
-            //                      nếu chưa xuất bán (unsold) => cho phép xóa
             foreach (var existingItem in existingItems)
             {
                 if (!requestItemIds.Contains(existingItem.GoodsReceiptItemID))
@@ -219,7 +203,6 @@ namespace PharmacyManagement.Services.Implements
                 }
             }
 
-            // 4. Xóa items không còn trong request
             var itemsToRemove = existingItems
                 .Where(i => !requestItemIds.Contains(i.GoodsReceiptItemID))
                 .ToList();
@@ -229,26 +212,18 @@ namespace PharmacyManagement.Services.Implements
                 _repository.RemoveGoodsReceiptItems(new[] { item });
             }
 
-
-
-            // 5. Validate + Apply updates/creates
             decimal totalAmount = 0;
             var newItems = new List<(UpdateGoodsReceiptItemRequest Request, GoodsReceiptItem Entity)>();
             var conversionCache = new Dictionary<(long MedicineId, long UnitId), UnitConversion?>();
 
             foreach (var itemRequest in request.Items)
             {
-                // lấy medicine và validate medicine exists
                 var medicine = medicineCache[itemRequest.MedicineID];
-
-                // lấy đơn vị tính và validate đơn vị tính exists
                 var unit = unitCache[itemRequest.UnitID];
 
                 decimal conversionFactor;
                 string unitName = unit.UnitName;
 
-                // nếu đơn vị tính trong request là đơn vị cơ sở của thuốc => conversionFactor = quantity
-                // nếu không => lấy conversionFactor từ bảng UnitConversion * quantity(request)
                 if (itemRequest.UnitID == medicine.BaseUnitID)
                 {
                     conversionFactor = itemRequest.Quantity;
@@ -265,9 +240,6 @@ namespace PharmacyManagement.Services.Implements
                     conversionFactor = (unitConversion?.Factor ?? 1) * itemRequest.Quantity;
                 }
 
-                // nếu itemRequest có GoodsReceiptItemID
-                //  => validate (số lượng sửa > số lượng đã bán và medicine trong batch) và update item
-                // nếu không => create item
                 if (itemRequest.GoodsReceiptItemID.HasValue)
                 {
                     var existingItem = existingItems
@@ -297,7 +269,6 @@ namespace PharmacyManagement.Services.Implements
 
             goodsReceipt.TotalAmount = totalAmount;
 
-            // 6. Tạo batch cho items mới
             if (newItems.Any())
             {
                 var warehouses = await _warehouseRepository.GetByBranchAsync(branchId, 0, 1);
@@ -334,8 +305,8 @@ namespace PharmacyManagement.Services.Implements
             if (goodsReceipt.BranchID != branchId)
                 throw new BusinessException("Goods receipt not found in this branch.", "GR003", StatusCodes.Status403Forbidden);
 
-            // chỉ cho phép xóa khi batch của phiếu chưa được tham chiếu
-            // (hóa đơn, trả NCC, trả hàng, hủy, chỉnh tồn, kiểm kê)
+            StatusTicketValidator.ValidateForDelete(goodsReceipt.Status, "phiếu nhập kho");
+
             var batchIds = goodsReceipt.GoodsReceiptItem?
                 .SelectMany(i => i.Batch ?? new List<Batch>())
                 .Select(b => b.BatchID)
@@ -349,7 +320,6 @@ namespace PharmacyManagement.Services.Implements
                     StatusCodes.Status400BadRequest);
             }
 
-            // soft delete phiếu + xóa cứng batch, giữ lại toàn bộ GoodsReceiptItem
             await _repository.BeginTransactionAsync();
             try
             {
@@ -359,7 +329,6 @@ namespace PharmacyManagement.Services.Implements
                 if (batches.Count > 0)
                     _repository.RemoveBatches(batches);
 
-                // HandleSoftDelete() trong DbContext sẽ tự chuyển DELETE thành UPDATE IsDeleted = true
                 _repository.Delete(goodsReceipt);
 
                 await _repository.SaveChangesAsync();
@@ -370,6 +339,59 @@ namespace PharmacyManagement.Services.Implements
                 await _repository.RollbackTransactionAsync();
                 throw;
             }
+        }
+
+        public async Task ApproveAsync(long id, long userId, long branchId)
+        {
+            var goodsReceipt = await _repository.GetByIdAsync(id);
+            if (goodsReceipt == null)
+                throw new BusinessException("Goods receipt not found.", "GR002", StatusCodes.Status404NotFound);
+
+            if (goodsReceipt.BranchID != branchId)
+                throw new BusinessException("Goods receipt not found in this branch.", "GR003", StatusCodes.Status403Forbidden);
+
+            StatusTicketValidator.ValidateForApprove(goodsReceipt.Status, "phiếu nhập kho");
+            StatusTicketValidator.ValidateCreatorNotApprover(goodsReceipt.UserID, userId, "phiếu nhập kho");
+
+            goodsReceipt.Status = StatusTicket.APPROVED;
+            goodsReceipt.ApprovedBy = userId;
+            goodsReceipt.ApprovedAt = DateTime.Now;
+
+            await _repository.SaveChangesAsync();
+        }
+
+        public async Task RejectAsync(long id, long userId, long branchId)
+        {
+            var goodsReceipt = await _repository.GetByIdAsync(id);
+            if (goodsReceipt == null)
+                throw new BusinessException("Goods receipt not found.", "GR002", StatusCodes.Status404NotFound);
+
+            if (goodsReceipt.BranchID != branchId)
+                throw new BusinessException("Goods receipt not found in this branch.", "GR003", StatusCodes.Status403Forbidden);
+
+            StatusTicketValidator.ValidateForReject(goodsReceipt.Status, "phiếu nhập kho");
+
+            goodsReceipt.Status = StatusTicket.REJECTED;
+
+            await _repository.SaveChangesAsync();
+        }
+
+        public async Task<GoodsReceiptResponse> CompleteAsync(long id, long userId, long branchId)
+        {
+            var goodsReceipt = await _repository.GetByIdAsync(id);
+            if (goodsReceipt == null)
+                throw new BusinessException("Goods receipt not found.", "GR002", StatusCodes.Status404NotFound);
+
+            if (goodsReceipt.BranchID != branchId)
+                throw new BusinessException("Goods receipt not found in this branch.", "GR003", StatusCodes.Status403Forbidden);
+
+            StatusTicketValidator.ValidateForComplete(goodsReceipt.Status, "phiếu nhập kho");
+
+            goodsReceipt.Status = StatusTicket.COMPLETE;
+
+            await _repository.SaveChangesAsync();
+
+            return goodsReceipt.ToResponse();
         }
 
         public async Task<GoodsReceiptDetailResponse?> GetByIdAsync(long id, long branchId)
@@ -400,7 +422,10 @@ namespace PharmacyManagement.Services.Implements
                 ReceiptDate = gr.ReceiptDate,
                 TotalAmount = gr.TotalAmount,
                 PaidAmount = gr.PaidAmount,
-                Note = gr.Note
+                Note = gr.Note,
+                Status = gr.Status.ToString(),
+                ApprovedBy = gr.ApprovedBy,
+                ApprovedAt = gr.ApprovedAt
             });
 
             var paged = await projectedQuery.ToPagedResultAsync(filter);

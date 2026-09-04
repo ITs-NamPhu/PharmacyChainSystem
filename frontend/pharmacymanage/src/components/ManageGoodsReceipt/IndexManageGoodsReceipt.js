@@ -4,14 +4,15 @@ import { MdAddCircle } from "react-icons/md";
 
 import ModalCreateGoodsReceipt from './ModalCreateGoodsReceipt';
 import ModalUpdateGoodsReceipt from './ModalUpdateGoodsReceipt';
-import ModalDeleteGoodsReceipt from './ModalDeleteGoodsReceipt';
+import ModalViewGoodsReceipt from './ModalViewGoodsReceipt';
+import StatusActionModal from '../common/StatusActionModal';
 import TableGoodsReceipt from './tableGoodsReceipt';
 import SearchBar from '../common/SearchBar';
 import FilterPanel, { FilterDateRange, FilterNumber } from '../common/FilterPanel';
 
 import './IndexManageGoodsReceipt.scss';
 
-import { getGoodsReceiptFiltered } from '../../services/apiService';
+import { getGoodsReceiptFiltered, ApproveGoodsReceipt, RejectGoodsReceipt, CompleteGoodsReceipt, DeleteGoodsReceipt } from '../../services/apiService';
 import { useGoodsReceiptFilter } from '../../stores/filterStore';
 
 const IndexManageGoodsReceipt = () => {
@@ -25,8 +26,10 @@ const IndexManageGoodsReceipt = () => {
     const [showModalCreateGoodsReceipt, setShowModalCreateGoodsReceipt] = useState(false);
     const [showModalUpdateGoodsReceipt, setShowModalUpdateGoodsReceipt] = useState(false);
     const [dataUpdate, setDataUpdate] = useState({});
-    const [showModalDeleteGoodsReceipt, setShowModalDeleteGoodsReceipt] = useState(false);
-    const [dataDelete, setDataDelete] = useState({});
+    const [showModalViewGoodsReceipt, setShowModalViewGoodsReceipt] = useState(false);
+    const [dataView, setDataView] = useState({});
+
+    const [actionModal, setActionModal] = useState({ show: false, mode: '', record: {} });
 
     useEffect(() => {
         hydrateFromUrl(searchParams);
@@ -58,6 +61,41 @@ const IndexManageGoodsReceipt = () => {
 
     const handlePageChange = (page) => {
         setFilter('pageNumber', page);
+    };
+
+    const handleViewGoodsReceipt = (gr) => {
+        setShowModalViewGoodsReceipt(true);
+        setDataView(gr);
+    };
+
+    const handleApproveGoodsReceipt = (gr) => {
+        setActionModal({ show: true, mode: 'approve', record: gr });
+    };
+
+    const handleRejectGoodsReceipt = (gr) => {
+        setActionModal({ show: true, mode: 'reject', record: gr });
+    };
+
+    const handleCompleteGoodsReceipt = (gr) => {
+        setActionModal({ show: true, mode: 'complete', record: gr });
+    };
+
+    const handleDeleteGoodsReceipt = (gr) => {
+        setActionModal({ show: true, mode: 'delete', record: gr });
+    };
+
+    const confirmAction = async (record) => {
+        const { mode } = actionModal;
+        let call;
+        if (mode === 'approve') call = ApproveGoodsReceipt(record.goodsReceiptID);
+        else if (mode === 'reject') call = RejectGoodsReceipt(record.goodsReceiptID);
+        else if (mode === 'complete') call = CompleteGoodsReceipt(record.goodsReceiptID);
+        else if (mode === 'delete') call = DeleteGoodsReceipt(record.goodsReceiptID);
+        const res = await call;
+        if (!res || res.ec !== 0) {
+            throw new Error(res?.em || 'Thao tác thất bại');
+        }
+        await fetchListGoodsReceipt(filters);
     };
 
     return (
@@ -113,8 +151,12 @@ const IndexManageGoodsReceipt = () => {
                     <TableGoodsReceipt
                         fetchListGoodsReceipt={handlePageChange}
                         listGoodsReceipt={listGoodsReceipt}
+                        handleViewGoodsReceipt={handleViewGoodsReceipt}
+                        handleApproveGoodsReceipt={handleApproveGoodsReceipt}
+                        handleRejectGoodsReceipt={handleRejectGoodsReceipt}
+                        handleCompleteGoodsReceipt={handleCompleteGoodsReceipt}
                         handleUpdateGoodsReceipt={(gr) => { setShowModalUpdateGoodsReceipt(true); setDataUpdate(gr); }}
-                        handleDeleteGoodsReceipt={(gr) => { setShowModalDeleteGoodsReceipt(true); setDataDelete(gr); }}
+                        handleDeleteGoodsReceipt={handleDeleteGoodsReceipt}
                         pageCount={pageCount}
                         currentPage={currentPage}
                         setCurrentPage={setCurrentPage}
@@ -123,7 +165,15 @@ const IndexManageGoodsReceipt = () => {
 
                 <ModalCreateGoodsReceipt show={showModalCreateGoodsReceipt} setShow={setShowModalCreateGoodsReceipt} fetchListGoodsReceipt={() => fetchListGoodsReceipt(filters)} />
                 <ModalUpdateGoodsReceipt show={showModalUpdateGoodsReceipt} setShow={setShowModalUpdateGoodsReceipt} fetchListGoodsReceipt={() => fetchListGoodsReceipt(filters)} dataUpdate={dataUpdate} />
-                <ModalDeleteGoodsReceipt show={showModalDeleteGoodsReceipt} setShow={setShowModalDeleteGoodsReceipt} fetchListGoodsReceipt={() => fetchListGoodsReceipt(filters)} dataDelete={dataDelete} setCurrentPage={setCurrentPage} />
+                <ModalViewGoodsReceipt show={showModalViewGoodsReceipt} setShow={setShowModalViewGoodsReceipt} dataView={dataView} />
+                <StatusActionModal
+                    show={actionModal.show}
+                    setShow={(v) => setActionModal(prev => ({ ...prev, show: v }))}
+                    mode={actionModal.mode}
+                    entityName="phiếu nhập kho"
+                    record={actionModal.record}
+                    onConfirm={confirmAction}
+                />
             </div>
         </div>
     );

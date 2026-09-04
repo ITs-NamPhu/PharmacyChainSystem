@@ -88,7 +88,10 @@ namespace PharmacyManagement.Mappers
                 ReceiptDate = entity.ReceiptDate,
                 TotalAmount = entity.TotalAmount,
                 PaidAmount = entity.PaidAmount,
-                Note = entity.Note
+                Note = entity.Note,
+                Status = entity.Status.ToString(),
+                ApprovedBy = entity.ApprovedBy,
+                ApprovedAt = entity.ApprovedAt
             };
         }
 
@@ -106,6 +109,9 @@ namespace PharmacyManagement.Mappers
                 TotalAmount = entity.TotalAmount,
                 PaidAmount = entity.PaidAmount,
                 Note = entity.Note,
+                Status = entity.Status.ToString(),
+                ApprovedBy = entity.ApprovedBy,
+                ApprovedAt = entity.ApprovedAt,
                 Items = entity.GoodsReceiptItem?.Select(item => new GoodsReceiptItemDetailResponse
                 {
                     GoodsReceiptItemID = item.GoodsReceiptItemID,

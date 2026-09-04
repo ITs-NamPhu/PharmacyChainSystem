@@ -311,10 +311,12 @@ INSERT INTO [Permission] ([Name], [Description]) VALUES
 ('STOCK_ADJUSTMENT_VIEW', N'Xem phieu dieu chinh kho'),
 ('STOCK_ADJUSTMENT_CREATE', N'Tao phieu dieu chinh kho'),
 ('STOCK_ADJUSTMENT_APPROVE', N'Duyet phieu dieu chinh kho'),
+('STOCK_ADJUSTMENT_DELETE', N'Xoa phieu dieu chinh kho'),
 ('STOCKTAKE_VIEW', N'Xem phieu kiem ke'),
 ('STOCKTAKE_CREATE', N'Tao phieu kiem ke'),
 ('STOCKTAKE_UPDATE', N'Cap nhat phieu kiem ke'),
 ('STOCKTAKE_APPROVE', N'Duyet phieu kiem ke'),
+('STOCKTAKE_DELETE', N'Xoa phieu kiem ke'),
 ('SUPPLIER_VIEW', N'Xem nha cung cap'),
 ('SUPPLIER_CREATE', N'Them nha cung cap'),
 ('SUPPLIER_UPDATE', N'Cap nhat nha cung cap'),
@@ -933,6 +935,9 @@ DECLARE @gr_sup BIGINT
 DECLARE @gr_date DATETIME2
 DECLARE @gr_id BIGINT
 DECLARE @gr_total DECIMAL(18,2)
+DECLARE @gr_status INT
+DECLARE @gr_approved_by BIGINT
+DECLARE @gr_approved_at DATETIME2
 DECLARE @num_items INT
 DECLARE @item_idx INT
 DECLARE @med_id BIGINT
@@ -953,8 +958,34 @@ BEGIN
     SET @gr_sup = ((@gr - 1) % 50) + 1
     SET @gr_date = DATEADD(day, - (400 - @gr), GETDATE())
 
-    INSERT INTO [GoodsReceipt] ([ReceiptNumber], [SupplierID], [BranchID], [UserID], [ReceiptDate], [TotalAmount], [PaidAmount], [Note], [IsDeleted])
-    VALUES (@gr, @gr_sup, @gr_branch, @gr_user, @gr_date, 0, 0, N'Phiếu nhập kho định kỳ số ' + CAST(@gr AS NVARCHAR), 0)
+    -- StatusTicket: 0=PENDING, 1=APPROVED, 2=COMPLETE, 3=REJECTED
+    IF @gr <= 380
+    BEGIN
+        SET @gr_status = 2 -- COMPLETE (Da nhap kho)
+        SET @gr_approved_by = 1
+        SET @gr_approved_at = DATEADD(hour, 1, @gr_date)
+    END
+    ELSE IF @gr <= 390
+    BEGIN
+        SET @gr_status = 1 -- APPROVED (Da duyet)
+        SET @gr_approved_by = 1
+        SET @gr_approved_at = DATEADD(hour, 1, @gr_date)
+    END
+    ELSE IF @gr <= 398
+    BEGIN
+        SET @gr_status = 0 -- PENDING (Cho duyet)
+        SET @gr_approved_by = NULL
+        SET @gr_approved_at = NULL
+    END
+    ELSE
+    BEGIN
+        SET @gr_status = 3 -- REJECTED (Tu choi)
+        SET @gr_approved_by = 1
+        SET @gr_approved_at = DATEADD(hour, 1, @gr_date)
+    END
+
+    INSERT INTO [GoodsReceipt] ([ReceiptNumber], [SupplierID], [BranchID], [UserID], [ReceiptDate], [TotalAmount], [PaidAmount], [Note], [ApprovedBy], [ApprovedAt], [Status], [IsDeleted])
+    VALUES (@gr, @gr_sup, @gr_branch, @gr_user, @gr_date, 0, 0, N'Phiếu nhập kho định kỳ số ' + CAST(@gr AS NVARCHAR), @gr_approved_by, @gr_approved_at, @gr_status, 0)
     SET @gr_id = SCOPE_IDENTITY()
 
     SET @gr_total = 0
@@ -1268,26 +1299,51 @@ DECLARE @st INT = 1
 DECLARE @st_wh BIGINT
 DECLARE @st_user BIGINT
 DECLARE @st_date DATETIME2
-DECLARE @st_is_balance INT
-DECLARE @st_is_adj BIT
-DECLARE @st_is_des BIT
+DECLARE @st_status INT
+DECLARE @st_approved_by BIGINT
+DECLARE @st_approved_at DATETIME2
 DECLARE @st_id BIGINT
 DECLARE @st_item_idx INT
 DECLARE @st_batch BIGINT
 DECLARE @sys_q DECIMAL(18,2)
 DECLARE @act_q DECIMAL(18,2)
+DECLARE @st_adj_q DECIMAL(18,2)
+DECLARE @st_des_q DECIMAL(18,2)
 
 WHILE @st <= 60
 BEGIN
     SET @st_wh = ((@st - 1) % 4) + 1
     SET @st_user = CASE @st_wh WHEN 1 THEN 11 WHEN 2 THEN 12 WHEN 3 THEN 13 ELSE 14 END
     SET @st_date = DATEADD(day, - (120 - @st * 2), GETDATE())
-    SET @st_is_balance = CASE WHEN @st > 40 THEN 0 ELSE 1 END -- 0: Balanced, 1: Difference
-    SET @st_is_adj = CASE WHEN @st BETWEEN 1 AND 20 THEN 1 ELSE 0 END
-    SET @st_is_des = CASE WHEN @st BETWEEN 21 AND 40 THEN 1 ELSE 0 END
 
-    INSERT INTO [StockTake] ([WarehouseID], [UserID], [CreatedAt], [Note], [IsBalance], [Status], [IsAdjust], [IsDestroy], [ApprovedBy], [ApprovedAt])
-    VALUES (@st_wh, @st_user, @st_date, N'Phiếu kiểm kê định kỳ kỳ ' + CAST(@st AS NVARCHAR), @st_is_balance, 1, @st_is_adj, @st_is_des, 1, DATEADD(hour, 4, @st_date))
+    -- StatusTicket: 0=PENDING, 1=APPROVED, 2=COMPLETE, 3=REJECTED
+    IF @st <= 40
+    BEGIN
+        SET @st_status = 2 -- COMPLETE (Hoan thanh kiem ke, san sang dieu chinh / huy)
+        SET @st_approved_by = 1
+        SET @st_approved_at = DATEADD(hour, 4, @st_date)
+    END
+    ELSE IF @st <= 50
+    BEGIN
+        SET @st_status = 1 -- APPROVED (Da duyet)
+        SET @st_approved_by = 1
+        SET @st_approved_at = DATEADD(hour, 4, @st_date)
+    END
+    ELSE IF @st <= 58
+    BEGIN
+        SET @st_status = 0 -- PENDING (Cho duyet)
+        SET @st_approved_by = NULL
+        SET @st_approved_at = NULL
+    END
+    ELSE
+    BEGIN
+        SET @st_status = 3 -- REJECTED (Tu choi)
+        SET @st_approved_by = 1
+        SET @st_approved_at = DATEADD(hour, 4, @st_date)
+    END
+
+    INSERT INTO [StockTake] ([WarehouseID], [UserID], [CreatedAt], [Note], [Status], [ApprovedBy], [ApprovedAt], [IsDeleted])
+    VALUES (@st_wh, @st_user, @st_date, N'Phiếu kiểm kê định kỳ kỳ ' + CAST(@st AS NVARCHAR), @st_status, @st_approved_by, @st_approved_at, 0)
     SET @st_id = SCOPE_IDENTITY()
 
     SET @st_item_idx = 1
@@ -1298,16 +1354,22 @@ BEGIN
         IF @sys_q IS NULL SET @sys_q = 50.00
 
         SET @act_q = @sys_q
-        IF @st_is_balance = 1
+        SET @st_adj_q = 0.00
+        SET @st_des_q = 0.00
+
+        IF @st BETWEEN 1 AND 20
         BEGIN
-            IF @st_is_adj = 1
-                SET @act_q = @sys_q + CASE WHEN @st_item_idx = 1 THEN 2.00 ELSE -2.00 END
-            ELSE IF @st_is_des = 1
-                SET @act_q = @sys_q - 1.00
+            SET @act_q = @sys_q + CASE WHEN @st_item_idx = 1 THEN 2.00 ELSE -2.00 END
+            SET @st_adj_q = ABS(@act_q - @sys_q)
+        END
+        ELSE IF @st BETWEEN 21 AND 40
+        BEGIN
+            SET @act_q = @sys_q - 1.00
+            SET @st_des_q = ABS(@act_q - @sys_q)
         END
 
-        INSERT INTO [StockTakeItem] ([StockTakeID], [BatchID], [SystemQuantity], [ActualQuantity], [DifferenceQuantity], [IsAdjust], [IsDestroy])
-        VALUES (@st_id, @st_batch, @sys_q, @act_q, @act_q - @sys_q, @st_is_adj, @st_is_des)
+        INSERT INTO [StockTakeItem] ([StockTakeID], [BatchID], [SystemQuantity], [ActualQuantity], [DifferenceQuantity], [AdjustQuantity], [DestroyQuantity])
+        VALUES (@st_id, @st_batch, @sys_q, @act_q, @act_q - @sys_q, @st_adj_q, @st_des_q)
 
         SET @st_item_idx = @st_item_idx + 1
     END
@@ -1325,6 +1387,9 @@ DECLARE @sa_wh BIGINT
 DECLARE @sa_user BIGINT
 DECLARE @sa_date DATETIME2
 DECLARE @sa_id BIGINT
+DECLARE @sa_status INT
+DECLARE @sa_approved_by BIGINT
+DECLARE @sa_approved_at DATETIME2
 
 WHILE @sa <= 20
 BEGIN
@@ -1334,8 +1399,34 @@ BEGIN
     FROM [StockTake]
     WHERE [StockTakeID] = @sa_st_id
 
-    INSERT INTO [StockAdjustment] ([WarehouseID], [UserID], [StockTakeID], [Note], [CreatedAt], [ApprovedBy], [ApprovedAt])
-    VALUES (@sa_wh, @sa_user, @sa_st_id, N'Điều chỉnh cân bằng kho sau kiểm kê ' + CAST(@sa_st_id AS NVARCHAR), @sa_date, 1, DATEADD(hour, 1, @sa_date))
+    -- StatusTicket: 0=PENDING, 1=APPROVED, 2=COMPLETE, 3=REJECTED
+    IF @sa <= 16
+    BEGIN
+        SET @sa_status = 2 -- COMPLETE
+        SET @sa_approved_by = 1
+        SET @sa_approved_at = DATEADD(hour, 1, @sa_date)
+    END
+    ELSE IF @sa <= 18
+    BEGIN
+        SET @sa_status = 0 -- PENDING
+        SET @sa_approved_by = NULL
+        SET @sa_approved_at = NULL
+    END
+    ELSE IF @sa = 19
+    BEGIN
+        SET @sa_status = 1 -- APPROVED
+        SET @sa_approved_by = 1
+        SET @sa_approved_at = DATEADD(hour, 1, @sa_date)
+    END
+    ELSE
+    BEGIN
+        SET @sa_status = 3 -- REJECTED
+        SET @sa_approved_by = 1
+        SET @sa_approved_at = DATEADD(hour, 1, @sa_date)
+    END
+
+    INSERT INTO [StockAdjustment] ([WarehouseID], [UserID], [StockTakeID], [Note], [CreatedAt], [ApprovedBy], [ApprovedAt], [Status], [IsDeleted])
+    VALUES (@sa_wh, @sa_user, @sa_st_id, N'Điều chỉnh cân bằng kho sau kiểm kê ' + CAST(@sa_st_id AS NVARCHAR), @sa_date, @sa_approved_by, @sa_approved_at, @sa_status, 0)
     SET @sa_id = SCOPE_IDENTITY()
 
     INSERT INTO [StockAdjustmentItem] ([StockAdjustmentID], [BatchID], [StockTakeItemID], [AdjustQuantity], [ReasonCode])
@@ -1343,11 +1434,14 @@ BEGIN
     FROM [StockTakeItem] sti
     WHERE sti.[StockTakeID] = @sa_st_id
 
-    UPDATE b
-    SET b.[QuantityInStock] = b.[QuantityInStock] + sti.[DifferenceQuantity]
-    FROM [Batch] b
-    JOIN [StockTakeItem] sti ON b.[BatchID] = sti.[BatchID]
-    WHERE sti.[StockTakeID] = @sa_st_id
+    IF @sa_status = 2
+    BEGIN
+        UPDATE b
+        SET b.[QuantityInStock] = b.[QuantityInStock] + sti.[DifferenceQuantity]
+        FROM [Batch] b
+        JOIN [StockTakeItem] sti ON b.[BatchID] = sti.[BatchID]
+        WHERE sti.[StockTakeID] = @sa_st_id
+    END
 
     SET @sa = @sa + 1
 END
@@ -1362,6 +1456,9 @@ DECLARE @dr_wh BIGINT
 DECLARE @dr_user BIGINT
 DECLARE @dr_date DATETIME2
 DECLARE @dr_id BIGINT
+DECLARE @dr_status INT
+DECLARE @dr_approved_by BIGINT
+DECLARE @dr_approved_at DATETIME2
 
 WHILE @dr <= 20
 BEGIN
@@ -1371,8 +1468,34 @@ BEGIN
     FROM [StockTake]
     WHERE [StockTakeID] = @dr_st_id
 
-    INSERT INTO [DestroyReceipt] ([WarehouseID], [UserID], [StockTakeID], [Note], [CreatedAt], [ApprovedBy], [ApprovedAt])
-    VALUES (@dr_wh, @dr_user, @dr_st_id, N'Tiêu hủy thuốc hết hạn/hỏng chất lượng số ' + CAST(@dr AS NVARCHAR), @dr_date, 1, DATEADD(hour, 2, @dr_date))
+    -- StatusTicket: 0=PENDING, 1=APPROVED, 2=COMPLETE, 3=REJECTED
+    IF @dr <= 16
+    BEGIN
+        SET @dr_status = 2 -- COMPLETE
+        SET @dr_approved_by = 1
+        SET @dr_approved_at = DATEADD(hour, 2, @dr_date)
+    END
+    ELSE IF @dr <= 18
+    BEGIN
+        SET @dr_status = 0 -- PENDING
+        SET @dr_approved_by = NULL
+        SET @dr_approved_at = NULL
+    END
+    ELSE IF @dr = 19
+    BEGIN
+        SET @dr_status = 1 -- APPROVED
+        SET @dr_approved_by = 1
+        SET @dr_approved_at = DATEADD(hour, 2, @dr_date)
+    END
+    ELSE
+    BEGIN
+        SET @dr_status = 3 -- REJECTED
+        SET @dr_approved_by = 1
+        SET @dr_approved_at = DATEADD(hour, 2, @dr_date)
+    END
+
+    INSERT INTO [DestroyReceipt] ([WarehouseID], [UserID], [StockTakeID], [Note], [CreatedAt], [ApprovedBy], [ApprovedAt], [Status], [IsDeleted])
+    VALUES (@dr_wh, @dr_user, @dr_st_id, N'Tiêu hủy thuốc hết hạn/hỏng chất lượng số ' + CAST(@dr AS NVARCHAR), @dr_date, @dr_approved_by, @dr_approved_at, @dr_status, 0)
     SET @dr_id = SCOPE_IDENTITY()
 
     INSERT INTO [DestroyReceiptItem] ([DestroyReceiptID], [BatchID], [StockTakeItemID], [Quantity], [UnitCost], [ReasonCode])
@@ -1382,11 +1505,14 @@ BEGIN
     JOIN [GoodsReceiptItem] gri ON b.[GoodsReceiptItemID] = gri.[GoodsReceiptItemID]
     WHERE sti.[StockTakeID] = @dr_st_id
 
-    UPDATE b
-    SET b.[QuantityInStock] = CASE WHEN b.[QuantityInStock] >= ABS(sti.[DifferenceQuantity]) THEN b.[QuantityInStock] - ABS(sti.[DifferenceQuantity]) ELSE 0 END
-    FROM [Batch] b
-    JOIN [StockTakeItem] sti ON b.[BatchID] = sti.[BatchID]
-    WHERE sti.[StockTakeID] = @dr_st_id
+    IF @dr_status = 2
+    BEGIN
+        UPDATE b
+        SET b.[QuantityInStock] = CASE WHEN b.[QuantityInStock] >= ABS(sti.[DifferenceQuantity]) THEN b.[QuantityInStock] - ABS(sti.[DifferenceQuantity]) ELSE 0 END
+        FROM [Batch] b
+        JOIN [StockTakeItem] sti ON b.[BatchID] = sti.[BatchID]
+        WHERE sti.[StockTakeID] = @dr_st_id
+    END
 
     SET @dr = @dr + 1
 END

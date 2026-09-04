@@ -1,4 +1,5 @@
 import ReactPaginate from "react-paginate";
+import { getStatusBadge } from '../../../utils/statusTicket';
 
 const TableStockTake = (props) => {
     const { listStockTake, pageCount } = props;
@@ -14,28 +15,11 @@ const TableStockTake = (props) => {
         return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN");
     }
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "Draft":
-                return <span className="badge bg-warning text-dark">Nháp</span>;
-            case "Completed":
-                return <span className="badge bg-success">Hoàn thành</span>;
-            case "Cancelled":
-                return <span className="badge bg-danger">Đã hủy</span>;
-            default:
-                return <span className="badge bg-secondary">{status}</span>;
-        }
-    }
-
-    const getBalanceBadge = (isBalance) => {
-        if (isBalance === "Balanced")
-            return <span className="badge bg-success">Khớp</span>;
-        return <span className="badge bg-danger">Lệch</span>;
-    }
-
-    const canComplete = (value) => value.status === "Draft";
-    const canCancel = (value) => value.status === "Draft";
-    const canApprove = (value) => value.status === "Completed" && !value.approvedBy;
+    const canApprove = (value) => value.status === "PENDING";
+    const canReject = (value) => value.status === "PENDING";
+    const canComplete = (value) => value.status === "APPROVED";
+    const canUpdate = (value) => value.status === "REJECTED";
+    const canDelete = (value) => value.status === "PENDING" || value.status === "REJECTED";
 
     return (
         <>
@@ -47,10 +31,7 @@ const TableStockTake = (props) => {
                         <td>Người tạo</td>
                         <td>Ngày tạo</td>
                         <td>Trạng thái</td>
-                        <td>Kết quả</td>
                         <td>Số mặt hàng</td>
-                        <td>Cần điều chỉnh</td>
-                        <td>Tiêu hủy</td>
                         <td>Người duyệt</td>
                         <td>Thao tác</td>
                     </tr>
@@ -67,23 +48,26 @@ const TableStockTake = (props) => {
                                     <td>{value.userName}</td>
                                     <td>{formatDate(value.createdAt)}</td>
                                     <td>{getStatusBadge(value.status)}</td>
-                                    <td>{getBalanceBadge(value.isBalance)}</td>
                                     <td>{value.itemCount}</td>
-                                    <td>{value.isAdjust ? 'Có' : 'Không'}</td>
-                                    <td>{value.isDestroy ? 'Có' : 'Không'}</td>
                                     <td>{value.approvedBy ? `${value.approvedBy} (${formatDate(value.approvedAt)})` : '—'}</td>
                                     <td>
                                         <button className="btn btn-secondary btn-sm"
                                             onClick={() => props.handleViewStockTake(value)}>View</button>
-                                        {canComplete(value) &&
-                                            <button className="btn btn-success btn-sm mx-1"
-                                                onClick={() => props.handleCompleteStockTake(value)}>Complete</button>}
-                                        {canCancel(value) &&
-                                            <button className="btn btn-danger btn-sm"
-                                                onClick={() => props.handleCancelStockTake(value)}>Cancel</button>}
                                         {canApprove(value) &&
+                                            <button className="btn btn-success btn-sm mx-1"
+                                                onClick={() => props.handleApproveStockTake(value)}>Duyệt</button>}
+                                        {canReject(value) &&
+                                            <button className="btn btn-danger btn-sm"
+                                                onClick={() => props.handleRejectStockTake(value)}>Từ chối</button>}
+                                        {canComplete(value) &&
                                             <button className="btn btn-primary btn-sm mx-1"
-                                                onClick={() => props.handleApproveStockTake(value)}>Approve</button>}
+                                                onClick={() => props.handleCompleteStockTake(value)}>Hoàn thành</button>}
+                                        {canUpdate(value) &&
+                                            <button className="btn btn-warning btn-sm mx-1 text-dark"
+                                                onClick={() => props.handleUpdateStockTake(value)}>Sửa phiếu</button>}
+                                        {canDelete(value) &&
+                                            <button className="btn btn-outline-danger btn-sm mx-1"
+                                                onClick={() => props.handleDeleteStockTake(value)}>Xóa</button>}
                                     </td>
                                 </tr>
                             )
@@ -91,7 +75,7 @@ const TableStockTake = (props) => {
                     }
                     {listStockTake && listStockTake.length === 0 &&
                         <tr>
-                            <td colSpan={11}>"Not found stock take"</td>
+                            <td colSpan={8}>"Not found stock take"</td>
                         </tr>
                     }
                 </tbody>

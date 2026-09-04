@@ -1,4 +1,5 @@
 import ReactPaginate from "react-paginate";
+import { getStatusBadge } from '../../../utils/statusTicket';
 
 const TableStockAdjustment = (props) => {
     const { listStockAdjustment, pageCount } = props;
@@ -14,7 +15,11 @@ const TableStockAdjustment = (props) => {
         return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN");
     }
 
-    const canApprove = (value) => !value.approvedBy;
+    const canApprove = (value) => value.status === "PENDING";
+    const canReject = (value) => value.status === "PENDING";
+    const canComplete = (value) => value.status === "APPROVED";
+    const canUpdate = (value) => value.status === "REJECTED";
+    const canDelete = (value) => value.status === "PENDING" || value.status === "REJECTED";
 
     return (
         <>
@@ -26,6 +31,7 @@ const TableStockAdjustment = (props) => {
                         <td>Kho</td>
                         <td>Người tạo</td>
                         <td>Ngày tạo</td>
+                        <td>Trạng thái</td>
                         <td>Số mặt hàng</td>
                         <td>Người duyệt</td>
                         <td>Thao tác</td>
@@ -43,14 +49,27 @@ const TableStockAdjustment = (props) => {
                                     <td>{value.warehouseName}</td>
                                     <td>{value.userName}</td>
                                     <td>{formatDate(value.createdAt)}</td>
+                                    <td>{getStatusBadge(value.status)}</td>
                                     <td>{value.itemCount}</td>
                                     <td>{value.approvedBy ? `${value.approvedBy} (${formatDate(value.approvedAt)})` : '—'}</td>
                                     <td>
                                         <button className="btn btn-secondary btn-sm"
                                             onClick={() => props.handleViewStockAdjustment(value)}>View</button>
                                         {canApprove(value) &&
+                                            <button className="btn btn-success btn-sm mx-1"
+                                                onClick={() => props.handleApproveStockAdjustment(value)}>Duyệt</button>}
+                                        {canReject(value) &&
+                                            <button className="btn btn-danger btn-sm"
+                                                onClick={() => props.handleRejectStockAdjustment(value)}>Từ chối</button>}
+                                        {canComplete(value) &&
                                             <button className="btn btn-primary btn-sm mx-1"
-                                                onClick={() => props.handleApproveStockAdjustment(value)}>Approve</button>}
+                                                onClick={() => props.handleCompleteStockAdjustment(value)}>Hoàn thành</button>}
+                                        {canUpdate(value) &&
+                                            <button className="btn btn-warning btn-sm mx-1 text-dark"
+                                                onClick={() => props.handleUpdateStockAdjustment(value)}>Sửa phiếu</button>}
+                                        {canDelete(value) &&
+                                            <button className="btn btn-outline-danger btn-sm mx-1"
+                                                onClick={() => props.handleDeleteStockAdjustment(value)}>Xóa</button>}
                                     </td>
                                 </tr>
                             )
@@ -58,7 +77,7 @@ const TableStockAdjustment = (props) => {
                     }
                     {listStockAdjustment && listStockAdjustment.length === 0 &&
                         <tr>
-                            <td colSpan={8}>"Not found stock adjustment"</td>
+                            <td colSpan={9}>"Not found stock adjustment"</td>
                         </tr>
                     }
                 </tbody>

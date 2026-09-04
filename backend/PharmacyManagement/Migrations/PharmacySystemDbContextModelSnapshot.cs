@@ -355,12 +355,21 @@ namespace PharmacyManagement.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Note")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<long>("StockTakeID")
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("StockTakeID")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("StockTakeID1")
                         .HasColumnType("bigint");
 
                     b.Property<long>("UserID")
@@ -372,7 +381,12 @@ namespace PharmacyManagement.Migrations
                     b.HasKey("DestroyReceiptID");
 
                     b.HasIndex("StockTakeID")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[StockTakeID] IS NOT NULL");
+
+                    b.HasIndex("StockTakeID1")
+                        .IsUnique()
+                        .HasFilter("[StockTakeID1] IS NOT NULL");
 
                     b.HasIndex("UserID");
 
@@ -427,6 +441,12 @@ namespace PharmacyManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("GoodsReceiptID"));
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("ApprovedBy")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("BranchID")
                         .HasColumnType("bigint");
 
@@ -446,6 +466,9 @@ namespace PharmacyManagement.Migrations
 
                     b.Property<long>("ReceiptNumber")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<long>("SupplierID")
                         .HasColumnType("bigint");
@@ -1133,11 +1156,17 @@ namespace PharmacyManagement.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Note")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<long>("StockTakeID")
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("StockTakeID")
                         .HasColumnType("bigint");
 
                     b.Property<long>("UserID")
@@ -1149,7 +1178,8 @@ namespace PharmacyManagement.Migrations
                     b.HasKey("StockAdjustmentID");
 
                     b.HasIndex("StockTakeID")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[StockTakeID] IS NOT NULL");
 
                     b.HasIndex("UserID");
 
@@ -1210,13 +1240,7 @@ namespace PharmacyManagement.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsAdjust")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("IsBalance")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDestroy")
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("Note")
@@ -1253,17 +1277,17 @@ namespace PharmacyManagement.Migrations
                     b.Property<decimal>("ActualQuantity")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("AdjustQuantity")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<long>("BatchID")
                         .HasColumnType("bigint");
 
-                    b.Property<decimal>("DifferenceQuantity")
+                    b.Property<decimal>("DestroyQuantity")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<bool>("IsAdjust")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDestroy")
-                        .HasColumnType("bit");
+                    b.Property<decimal>("DifferenceQuantity")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<long>("StockTakeID")
                         .HasColumnType("bigint");
@@ -1578,8 +1602,11 @@ namespace PharmacyManagement.Migrations
                     b.HasOne("PharmacyManagement.Models.StockTake", "StockTake")
                         .WithMany()
                         .HasForeignKey("StockTakeID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PharmacyManagement.Models.StockTake", null)
+                        .WithOne("DestroyReceipt")
+                        .HasForeignKey("PharmacyManagement.Models.DestroyReceipt", "StockTakeID1");
 
                     b.HasOne("PharmacyManagement.Models.User", "User")
                         .WithMany("DestroyReceipt")
@@ -1967,10 +1994,8 @@ namespace PharmacyManagement.Migrations
             modelBuilder.Entity("PharmacyManagement.Models.StockAdjustment", b =>
                 {
                     b.HasOne("PharmacyManagement.Models.StockTake", "StockTake")
-                        .WithMany()
-                        .HasForeignKey("StockTakeID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithOne("StockAdjustment")
+                        .HasForeignKey("PharmacyManagement.Models.StockAdjustment", "StockTakeID");
 
                     b.HasOne("PharmacyManagement.Models.User", "User")
                         .WithMany("StockAdjustment")
@@ -2249,6 +2274,10 @@ namespace PharmacyManagement.Migrations
 
             modelBuilder.Entity("PharmacyManagement.Models.StockTake", b =>
                 {
+                    b.Navigation("DestroyReceipt");
+
+                    b.Navigation("StockAdjustment");
+
                     b.Navigation("StockTakeItem");
                 });
 

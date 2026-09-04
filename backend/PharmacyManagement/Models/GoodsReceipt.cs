@@ -17,7 +17,9 @@ namespace PharmacyManagement.Models
 
         [StringLength(255)]
         public String Note { get; set; }
-
+        public long? ApprovedBy { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public StatusTicket Status { get; set; }
         public Supplier? Supplier { get; set; }
         public Branch? Branch { get; set; }
         public User? User { get; set; }

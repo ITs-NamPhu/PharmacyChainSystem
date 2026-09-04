@@ -9,12 +9,11 @@ namespace PharmacyManagement.DTOs.StockTake
         public string UserName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string Note { get; set; } = string.Empty;
-        public string IsBalance { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public bool IsAdjust { get; set; }
-        public bool IsDestroy { get; set; }
         public long? ApprovedBy { get; set; }
         public DateTime? ApprovedAt { get; set; }
+        public long? StockAdjustmentID { get; set; }
+        public long? DestroyReceiptID { get; set; }
         public List<StockTakeItemDetailResponse> Items { get; set; } = new();
     }
 
@@ -28,7 +27,7 @@ namespace PharmacyManagement.DTOs.StockTake
         public decimal SystemQuantity { get; set; }
         public decimal ActualQuantity { get; set; }
         public decimal DifferenceQuantity { get; set; }
-        public bool IsAdjust { get; set; }
-        public bool IsDestroy { get; set; }
+        public decimal AdjustQuantity { get; set; }
+        public decimal DestroyQuantity { get; set; }
     }
 }

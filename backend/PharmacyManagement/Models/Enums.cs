@@ -27,4 +27,12 @@ namespace PharmacyManagement.Models
         RECEIPT = 0,    // Từ phiếu thu (tiền thừa nạp vào ví)
         INVOICE = 1     // Từ hóa đơn (dùng ví để trả)
     }
+
+    public enum StatusTicket
+    {
+        PENDING = 0,    // Chờ duyệt
+        APPROVED = 1,   // Đã duyệt
+        COMPLETE = 2,   // Hoàn thành
+        REJECTED = 3    // Từ chối
+    }
 }
