@@ -25,7 +25,16 @@ namespace PharmacyManagement.Controllers
             return Success(result, "Create stock take successfully.");
         }
 
-        [HttpPost("{id}/complete")]
+        [HttpPut("{id}")]
+        [HasPermission("STOCKTAKE_UPDATE")]
+        public async Task<IActionResult> Update(long id, UpdateStockTakeRequest request)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.UpdateAsync(id, request, userId);
+            return Success(result, "Update stock take successfully.");
+        }
+
+        [HttpPut("{id}/complete")]
         [HasPermission("STOCKTAKE_UPDATE")]
         public async Task<IActionResult> Complete(long id)
         {
@@ -34,7 +43,7 @@ namespace PharmacyManagement.Controllers
             return Success(result, "Complete stock take successfully.");
         }
 
-        [HttpPost("{id}/cancel")]
+        [HttpPut("{id}/cancel")]
         [HasPermission("STOCKTAKE_UPDATE")]
         public async Task<IActionResult> Cancel(long id)
         {
@@ -43,13 +52,31 @@ namespace PharmacyManagement.Controllers
             return Success(null, "Cancel stock take successfully.");
         }
 
-        [HttpPost("{id}/approve")]
+        [HttpPut("{id}/approve")]
         [HasPermission("STOCKTAKE_APPROVE")]
         public async Task<IActionResult> Approve(long id)
         {
             var userId = GetUserIdFromToken();
             await _service.ApproveAsync(id, userId);
             return Success(null, "Approve stock take successfully.");
+        }
+
+        [HttpPut("{id}/reject")]
+        [HasPermission("STOCKTAKE_APPROVE")]
+        public async Task<IActionResult> Reject(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.RejectAsync(id, userId);
+            return Success(null, "Reject stock take successfully.");
+        }
+
+        [HttpDelete("{id}")]
+        [HasPermission("STOCKTAKE_DELETE")]
+        public async Task<IActionResult> Delete(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.DeleteAsync(id, userId);
+            return Success(null, "Delete stock take successfully.");
         }
 
         [HttpGet("{id}")]

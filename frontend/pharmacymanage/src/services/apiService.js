@@ -481,16 +481,25 @@ const CreateStockTake = (warehouseID, note, items) => {
         Items: items
     })
 }
+const UpdateStockTake = (stockTakeID, data) => {
+    return instance.put(`api/StockTake/${stockTakeID}`, data)
+}
 const CompleteStockTake = (stockTakeID, items) => {
-    return instance.post(`api/StockTake/${stockTakeID}/complete`, {
+    return instance.put(`api/StockTake/${stockTakeID}/complete`, {
         Items: items
     })
 }
 const CancelStockTake = (stockTakeID) => {
-    return instance.post(`api/StockTake/${stockTakeID}/cancel`)
+    return instance.put(`api/StockTake/${stockTakeID}/cancel`)
 }
 const ApproveStockTake = (stockTakeID) => {
-    return instance.post(`api/StockTake/${stockTakeID}/approve`)
+    return instance.put(`api/StockTake/${stockTakeID}/approve`)
+}
+const RejectStockTake = (stockTakeID) => {
+    return instance.put(`api/StockTake/${stockTakeID}/reject`)
+}
+const DeleteStockTake = (stockTakeID) => {
+    return instance.delete(`api/StockTake/${stockTakeID}`)
 }
 const getAllStockAdjustmentPag = (page, count, warehouseId) => {
     return instance.get(`api/StockAdjustment/GetAll`, {
@@ -507,8 +516,20 @@ const CreateStockAdjustment = (stockTakeID, note, items) => {
         Items: items
     })
 }
+const UpdateStockAdjustment = (stockAdjustmentID, data) => {
+    return instance.put(`api/StockAdjustment/${stockAdjustmentID}`, data)
+}
+const CompleteStockAdjustment = (stockAdjustmentID) => {
+    return instance.put(`api/StockAdjustment/${stockAdjustmentID}/complete`)
+}
 const ApproveStockAdjustment = (stockAdjustmentID) => {
-    return instance.post(`api/StockAdjustment/${stockAdjustmentID}/approve`)
+    return instance.put(`api/StockAdjustment/${stockAdjustmentID}/approve`)
+}
+const RejectStockAdjustment = (stockAdjustmentID) => {
+    return instance.put(`api/StockAdjustment/${stockAdjustmentID}/reject`)
+}
+const DeleteStockAdjustment = (stockAdjustmentID) => {
+    return instance.delete(`api/StockAdjustment/${stockAdjustmentID}`)
 }
 const getAllDestroyReceiptPag = (page, count, warehouseId) => {
     return instance.get(`api/DestroyReceipt/GetAll`, {
@@ -526,8 +547,29 @@ const CreateDestroyReceipt = (warehouseID, stockTakeID, note, items) => {
         Items: items
     })
 }
+const UpdateDestroyReceipt = (destroyReceiptID, data) => {
+    return instance.put(`api/DestroyReceipt/${destroyReceiptID}`, data)
+}
+const CompleteDestroyReceipt = (destroyReceiptID) => {
+    return instance.put(`api/DestroyReceipt/${destroyReceiptID}/complete`)
+}
 const ApproveDestroyReceipt = (destroyReceiptID) => {
-    return instance.post(`api/DestroyReceipt/${destroyReceiptID}/approve`)
+    return instance.put(`api/DestroyReceipt/${destroyReceiptID}/approve`)
+}
+const RejectDestroyReceipt = (destroyReceiptID) => {
+    return instance.put(`api/DestroyReceipt/${destroyReceiptID}/reject`)
+}
+const DeleteDestroyReceipt = (destroyReceiptID) => {
+    return instance.delete(`api/DestroyReceipt/${destroyReceiptID}`)
+}
+const ApproveGoodsReceipt = (goodsReceiptID) => {
+    return instance.put(`api/GoodsReceipt/${goodsReceiptID}/approve`)
+}
+const RejectGoodsReceipt = (goodsReceiptID) => {
+    return instance.put(`api/GoodsReceipt/${goodsReceiptID}/reject`)
+}
+const CompleteGoodsReceipt = (goodsReceiptID) => {
+    return instance.put(`api/GoodsReceipt/${goodsReceiptID}/complete`)
 }
 
 const cleanFilterParams = (params) => {
@@ -643,9 +685,11 @@ export {
 
     getMedicineFiltered, getBatchFiltered, getInvoiceFiltered, getGoodsReceiptFiltered,
 
-    getAllStockTakePag, GetStockTakeById, CreateStockTake, CompleteStockTake, CancelStockTake, ApproveStockTake,
+    getAllStockTakePag, GetStockTakeById, CreateStockTake, UpdateStockTake, CompleteStockTake, CancelStockTake, ApproveStockTake, RejectStockTake, DeleteStockTake,
 
-    getAllStockAdjustmentPag, GetStockAdjustmentById, CreateStockAdjustment, ApproveStockAdjustment,
+    getAllStockAdjustmentPag, GetStockAdjustmentById, CreateStockAdjustment, UpdateStockAdjustment, CompleteStockAdjustment, ApproveStockAdjustment, RejectStockAdjustment, DeleteStockAdjustment,
 
-    getAllDestroyReceiptPag, GetDestroyReceiptById, CreateDestroyReceipt, ApproveDestroyReceipt
+    getAllDestroyReceiptPag, GetDestroyReceiptById, CreateDestroyReceipt, UpdateDestroyReceipt, CompleteDestroyReceipt, ApproveDestroyReceipt, RejectDestroyReceipt, DeleteDestroyReceipt,
+
+    ApproveGoodsReceipt, RejectGoodsReceipt, CompleteGoodsReceipt
 };

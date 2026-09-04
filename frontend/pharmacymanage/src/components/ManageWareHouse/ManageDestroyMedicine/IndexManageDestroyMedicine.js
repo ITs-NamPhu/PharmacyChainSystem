@@ -8,11 +8,13 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import TableDestroyReceipt from './TableDestroyReceipt';
 import ModalCreateDestroyReceipt from './ModalCreateDestroyReceipt';
 import ModalViewDestroyReceipt from './ModalViewDestroyReceipt';
-import ModalApproveDestroyReceipt from './ModalApproveDestroyReceipt';
+import ModalCompleteDestroyReceipt from './ModalCompleteDestroyReceipt';
+import ModalUpdateDestroyReceipt from './ModalUpdateDestroyReceipt';
+import StatusActionModal from '../../common/StatusActionModal';
 
 import './IndexManageDestroyMedicine.scss'
 
-import { getAllDestroyReceiptPag, getWarehouseByBranch } from '../../../services/apiService';
+import { getAllDestroyReceiptPag, getWarehouseByBranch, ApproveDestroyReceipt, RejectDestroyReceipt, DeleteDestroyReceipt } from '../../../services/apiService';
 
 const IndexManageDestroyMedicine = (props) => {
 
@@ -32,8 +34,13 @@ const IndexManageDestroyMedicine = (props) => {
     const [showModalViewDestroyReceipt, setShowModalViewDestroyReceipt] = useState(false);
     const [dataView, setDataView] = useState({});
 
-    const [showModalApproveDestroyReceipt, setShowModalApproveDestroyReceipt] = useState(false);
-    const [dataApprove, setDataApprove] = useState({});
+    const [showModalCompleteDestroyReceipt, setShowModalCompleteDestroyReceipt] = useState(false);
+    const [dataComplete, setDataComplete] = useState({});
+
+    const [showModalUpdateDestroyReceipt, setShowModalUpdateDestroyReceipt] = useState(false);
+    const [dataUpdate, setDataUpdate] = useState({});
+
+    const [actionModal, setActionModal] = useState({ show: false, mode: '', record: {} });
 
     useEffect(() => {
         fetchWarehouse();
@@ -71,9 +78,35 @@ const IndexManageDestroyMedicine = (props) => {
         setShowModalViewDestroyReceipt(!showModalViewDestroyReceipt);
         setDataView(destroyReceipt);
     }
+    const handleCompleteDestroyReceipt = (destroyReceipt) => {
+        setShowModalCompleteDestroyReceipt(!showModalCompleteDestroyReceipt);
+        setDataComplete(destroyReceipt);
+    }
+    const handleUpdateDestroyReceipt = (destroyReceipt) => {
+        setShowModalUpdateDestroyReceipt(!showModalUpdateDestroyReceipt);
+        setDataUpdate(destroyReceipt);
+    }
     const handleApproveDestroyReceipt = (destroyReceipt) => {
-        setShowModalApproveDestroyReceipt(!showModalApproveDestroyReceipt);
-        setDataApprove(destroyReceipt);
+        setActionModal({ show: true, mode: 'approve', record: destroyReceipt });
+    }
+    const handleRejectDestroyReceipt = (destroyReceipt) => {
+        setActionModal({ show: true, mode: 'reject', record: destroyReceipt });
+    }
+    const handleDeleteDestroyReceipt = (destroyReceipt) => {
+        setActionModal({ show: true, mode: 'delete', record: destroyReceipt });
+    }
+
+    const confirmAction = async (record) => {
+        const { mode } = actionModal;
+        let call;
+        if (mode === 'approve') call = ApproveDestroyReceipt(record.destroyReceiptID);
+        else if (mode === 'reject') call = RejectDestroyReceipt(record.destroyReceiptID);
+        else if (mode === 'delete') call = DeleteDestroyReceipt(record.destroyReceiptID);
+        const res = await call;
+        if (!res || res.ec !== 0) {
+            throw new Error(res?.em || 'Thao tác thất bại');
+        }
+        await fetchDestroyReceipt(1, warehouseID);
     }
 
     const getWarehouseNameById = (id) => {
@@ -97,7 +130,7 @@ const IndexManageDestroyMedicine = (props) => {
                             {warehouseList.map((warehouse) => (
                                 <Dropdown.Item
                                     key={warehouse.warehouseID}
-                                    onClick={() => setWarehouseID(warehouse.warehouseID)}
+                                    onClick={() => { setWarehouseID(warehouse.warehouseID); fetchDestroyReceipt(1, warehouse.warehouseID); }}
                                 >
                                     {warehouse.warehouseName}
                                 </Dropdown.Item>
@@ -116,7 +149,11 @@ const IndexManageDestroyMedicine = (props) => {
                         listDestroyReceipt={destroyReceiptList}
 
                         handleViewDestroyReceipt={handleViewDestroyReceipt}
+                        handleCompleteDestroyReceipt={handleCompleteDestroyReceipt}
+                        handleUpdateDestroyReceipt={handleUpdateDestroyReceipt}
                         handleApproveDestroyReceipt={handleApproveDestroyReceipt}
+                        handleRejectDestroyReceipt={handleRejectDestroyReceipt}
+                        handleDeleteDestroyReceipt={handleDeleteDestroyReceipt}
 
                         pageCount={pageCount}
                         currentPage={currentPage}
@@ -135,10 +172,25 @@ const IndexManageDestroyMedicine = (props) => {
                         dataView={dataView}
                     />
 
-                    <ModalApproveDestroyReceipt
-                        show={showModalApproveDestroyReceipt} setShow={setShowModalApproveDestroyReceipt}
+                    <ModalCompleteDestroyReceipt
+                        show={showModalCompleteDestroyReceipt} setShow={setShowModalCompleteDestroyReceipt}
                         fetchDestroyReceipt={fetchDestroyReceipt}
-                        dataApprove={dataApprove}
+                        dataComplete={dataComplete}
+                    />
+
+                    <ModalUpdateDestroyReceipt
+                        show={showModalUpdateDestroyReceipt} setShow={setShowModalUpdateDestroyReceipt}
+                        fetchDestroyReceipt={fetchDestroyReceipt}
+                        dataUpdate={dataUpdate}
+                    />
+
+                    <StatusActionModal
+                        show={actionModal.show}
+                        setShow={(v) => setActionModal(prev => ({ ...prev, show: v }))}
+                        mode={actionModal.mode}
+                        entityName="phiếu tiêu hủy"
+                        record={actionModal.record}
+                        onConfirm={confirmAction}
                     />
                 </div>
             </div>

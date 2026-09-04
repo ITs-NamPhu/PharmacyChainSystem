@@ -33,6 +33,21 @@ namespace PharmacyManagement.Mappers
             };
         }
 
+        public static DestroyReceiptItem ToEntity(
+            this UpdateDestroyReceiptItemRequest request,
+            long destroyReceiptId,
+            decimal unitCost)
+        {
+            return new DestroyReceiptItem
+            {
+                DestroyReceiptID = destroyReceiptId,
+                BatchID = request.BatchID,
+                Quantity = request.Quantity,
+                UnitCost = unitCost,
+                ReasonCode = request.ReasonCode
+            };
+        }
+
         public static DestroyReceiptResponse ToResponse(this DestroyReceipt entity)
         {
             return new DestroyReceiptResponse
@@ -45,8 +60,10 @@ namespace PharmacyManagement.Mappers
                 StockTakeID = entity.StockTakeID,
                 Note = entity.Note,
                 CreatedAt = entity.CreatedAt,
+                Status = entity.Status.ToString(),
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
+                IsFromStockTake = entity.StockTakeID.HasValue,
                 ItemCount = entity.DestroyReceiptItem?.Count ?? 0
             };
         }
@@ -63,8 +80,10 @@ namespace PharmacyManagement.Mappers
                 StockTakeID = entity.StockTakeID,
                 Note = entity.Note,
                 CreatedAt = entity.CreatedAt,
+                Status = entity.Status.ToString(),
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
+                IsFromStockTake = entity.StockTakeID.HasValue,
                 Items = entity.DestroyReceiptItem?.Select(item => new DestroyReceiptItemDetailResponse
                 {
                     DestroyReceiptItemID = item.DestroyReceiptItemID,

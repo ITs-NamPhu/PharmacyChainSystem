@@ -59,6 +59,11 @@ namespace PharmacyManagement.Repositories.Implements
             await _context.StockAdjustment.AddAsync(entity);
         }
 
+        public void Delete(StockAdjustment entity)
+        {
+            _context.StockAdjustment.Remove(entity);
+        }
+
         public async Task<bool> HasAdjustmentAsync(long stockTakeId)
         {
             return await _context.StockAdjustment.AnyAsync(sa => sa.StockTakeID == stockTakeId);
@@ -84,6 +89,11 @@ namespace PharmacyManagement.Repositories.Implements
                 .ToListAsync();
 
             return batches.ToDictionary(b => b.BatchID);
+        }
+
+        public async Task<WareHouse?> GetWarehouseByIdAsync(long warehouseId)
+        {
+            return await _context.WareHouse.FindAsync(warehouseId);
         }
 
         public async Task SaveChangesAsync()

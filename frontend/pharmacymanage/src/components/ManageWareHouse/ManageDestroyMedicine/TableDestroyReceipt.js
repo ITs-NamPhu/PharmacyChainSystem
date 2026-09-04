@@ -1,4 +1,5 @@
 import ReactPaginate from "react-paginate";
+import { getStatusBadge } from '../../../utils/statusTicket';
 
 const TableDestroyReceipt = (props) => {
     const { listDestroyReceipt, pageCount } = props;
@@ -14,7 +15,11 @@ const TableDestroyReceipt = (props) => {
         return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN");
     }
 
-    const canApprove = (value) => !value.approvedBy;
+    const canApprove = (value) => value.status === "PENDING";
+    const canReject = (value) => value.status === "PENDING";
+    const canComplete = (value) => value.status === "APPROVED";
+    const canUpdate = (value) => value.status === "REJECTED";
+    const canDelete = (value) => value.status === "PENDING" || value.status === "REJECTED";
 
     return (
         <>
@@ -26,6 +31,7 @@ const TableDestroyReceipt = (props) => {
                         <td>Kho</td>
                         <td>Người tạo</td>
                         <td>Ngày tạo</td>
+                        <td>Trạng thái</td>
                         <td>Số mặt hàng</td>
                         <td>Người duyệt</td>
                         <td>Thao tác</td>
@@ -43,14 +49,27 @@ const TableDestroyReceipt = (props) => {
                                     <td>{value.warehouseName}</td>
                                     <td>{value.userName}</td>
                                     <td>{formatDate(value.createdAt)}</td>
+                                    <td>{getStatusBadge(value.status)}</td>
                                     <td>{value.itemCount}</td>
                                     <td>{value.approvedBy ? `${value.approvedBy} (${formatDate(value.approvedAt)})` : '—'}</td>
                                     <td>
                                         <button className="btn btn-secondary btn-sm"
                                             onClick={() => props.handleViewDestroyReceipt(value)}>View</button>
                                         {canApprove(value) &&
+                                            <button className="btn btn-success btn-sm mx-1"
+                                                onClick={() => props.handleApproveDestroyReceipt(value)}>Duyệt</button>}
+                                        {canReject(value) &&
+                                            <button className="btn btn-danger btn-sm mx-1"
+                                                onClick={() => props.handleRejectDestroyReceipt(value)}>Từ chối</button>}
+                                        {canComplete(value) &&
                                             <button className="btn btn-primary btn-sm mx-1"
-                                                onClick={() => props.handleApproveDestroyReceipt(value)}>Approve</button>}
+                                                onClick={() => props.handleCompleteDestroyReceipt(value)}>Hoàn thành</button>}
+                                        {canUpdate(value) &&
+                                            <button className="btn btn-warning btn-sm mx-1 text-dark"
+                                                onClick={() => props.handleUpdateDestroyReceipt(value)}>Sửa phiếu</button>}
+                                        {canDelete(value) &&
+                                            <button className="btn btn-outline-danger btn-sm mx-1"
+                                                onClick={() => props.handleDeleteDestroyReceipt(value)}>Xóa</button>}
                                     </td>
                                 </tr>
                             )
@@ -58,7 +77,7 @@ const TableDestroyReceipt = (props) => {
                     }
                     {listDestroyReceipt && listDestroyReceipt.length === 0 &&
                         <tr>
-                            <td colSpan={8}>"Not found destroy receipt"</td>
+                            <td colSpan={9}>"Not found destroy receipt"</td>
                         </tr>
                     }
                 </tbody>

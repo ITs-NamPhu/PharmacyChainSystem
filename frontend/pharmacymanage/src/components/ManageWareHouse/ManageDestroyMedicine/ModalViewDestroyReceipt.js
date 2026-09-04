@@ -3,6 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 
 import { GetDestroyReceiptById } from '../../../services/apiService';
+import { getStatusBadge } from '../../../utils/statusTicket';
 
 const ModalViewDestroyReceipt = (props) => {
     const { show, setShow, dataView } = props;
@@ -69,6 +70,10 @@ const ModalViewDestroyReceipt = (props) => {
                             <div className="col-md-6">
                                 <label className="fw-bold">Ngày tạo</label>
                                 <div>{formatDate(detail.createdAt)}</div>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="fw-bold">Trạng thái</label>
+                                <div>{getStatusBadge(detail.status)}</div>
                             </div>
                             <div className="col-md-6">
                                 <label className="fw-bold">Người duyệt</label>

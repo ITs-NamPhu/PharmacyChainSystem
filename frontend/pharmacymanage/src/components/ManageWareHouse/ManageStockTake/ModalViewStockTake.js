@@ -3,6 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 
 import { GetStockTakeById } from '../../../services/apiService';
+import { getStatusBadge } from '../../../utils/statusTicket';
 
 const ModalViewStockTake = (props) => {
     const { show, setShow, dataView } = props;
@@ -38,25 +39,6 @@ const ModalViewStockTake = (props) => {
         return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN");
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "Draft":
-                return <span className="badge bg-warning text-dark">Nháp</span>;
-            case "Completed":
-                return <span className="badge bg-success">Hoàn thành</span>;
-            case "Cancelled":
-                return <span className="badge bg-danger">Đã hủy</span>;
-            default:
-                return <span className="badge bg-secondary">{status}</span>;
-        }
-    };
-
-    const getBalanceBadge = (isBalance) => {
-        if (isBalance === "Balanced")
-            return <span className="badge bg-success">Khớp</span>;
-        return <span className="badge bg-danger">Lệch</span>;
-    };
-
     return (
         <Modal show={show} onHide={handleClose} size="xl" className='modal-view-stock-take'>
             <Modal.Header closeButton>
@@ -82,15 +64,7 @@ const ModalViewStockTake = (props) => {
                             </div>
                             <div className="col-md-6">
                                 <label className="fw-bold">Trạng thái</label>
-                                <div>{getStatusBadge(detail.status)} {getBalanceBadge(detail.isBalance)}</div>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="fw-bold">Cần điều chỉnh</label>
-                                <div>{detail.isAdjust ? 'Có' : 'Không'}</div>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="fw-bold">Tiêu hủy</label>
-                                <div>{detail.isDestroy ? 'Có' : 'Không'}</div>
+                                <div>{getStatusBadge(detail.status)}</div>
                             </div>
                             <div className="col-md-6">
                                 <label className="fw-bold">Người duyệt</label>
@@ -110,8 +84,8 @@ const ModalViewStockTake = (props) => {
                                     <th>SL hệ thống</th>
                                     <th>SL thực tế</th>
                                     <th>Chênh lệch</th>
-                                    <th>Điều chỉnh</th>
-                                    <th>Tiêu hủy</th>
+                                    <th>SL điều chỉnh</th>
+                                    <th>SL tiêu hủy</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -127,8 +101,8 @@ const ModalViewStockTake = (props) => {
                                                     {item.differenceQuantity > 0 ? `+${item.differenceQuantity}` : item.differenceQuantity}
                                                 </span>
                                             </td>
-                                            <td>{item.isAdjust ? 'Có' : 'Không'}</td>
-                                            <td>{item.isDestroy ? 'Có' : 'Không'}</td>
+                                            <td>{item.adjustQuantity}</td>
+                                            <td>{item.destroyQuantity}</td>
                                         </tr>
                                     ))
                                 }

@@ -63,8 +63,8 @@ const ModalCreateStockTake = (props) => {
                     unitName: batch.unitName,
                     systemQuantity: batch.quantityInStock,
                     actualQuantity: batch.quantityInStock,
-                    isAdjust: false,
-                    isDestroy: false
+                    adjustQuantity: 0,
+                    destroyQuantity: 0
                 })
             )
         );
@@ -81,10 +81,15 @@ const ModalCreateStockTake = (props) => {
     const handleChangeItem = (index, value) => {
         const updated = [...items];
         updated[index].actualQuantity = value;
+        const actual = parseFloat(value) || 0;
+        const diff = actual - updated[index].systemQuantity;
+        const absDiff = Math.abs(diff);
+        updated[index].adjustQuantity = absDiff;
+        updated[index].destroyQuantity = 0;
         setItems(updated);
     };
 
-    const handleChangeFlag = (index, field, value) => {
+    const handleReviewQuantity = (index, field, value) => {
         const updated = [...items];
         updated[index][field] = value;
         setItems(updated);
@@ -106,13 +111,26 @@ const ModalCreateStockTake = (props) => {
                 toast.error(`Số lượng thực tế phải >= 0 tại dòng ${i + 1}`);
                 return;
             }
+            const actual = +items[i].actualQuantity;
+            const diff = actual - items[i].systemQuantity;
+            const absDiff = Math.abs(diff);
+            const adjust = +items[i].adjustQuantity || 0;
+            const destroy = +items[i].destroyQuantity || 0;
+            if (adjust < 0 || destroy < 0) {
+                toast.error(`Số lượng điều chỉnh/tiêu hủy phải >= 0 tại dòng ${i + 1}`);
+                return;
+            }
+            if (adjust + destroy !== absDiff) {
+                toast.error(`Dòng ${i + 1}: Điều chỉnh + Tiêu hủy phải bằng |Chênh lệch| (${absDiff})`);
+                return;
+            }
         }
 
         const submitItems = items.map(item => ({
             BatchID: +item.batchID,
             ActualQuantity: +item.actualQuantity,
-            IsAdjust: !!item.isAdjust,
-            IsDestroy: !!item.isDestroy
+            AdjustQuantity: +item.adjustQuantity || 0,
+            DestroyQuantity: +item.destroyQuantity || 0
         }));
 
         let res = await CreateStockTake(+warehouseID, note, submitItems);
@@ -175,17 +193,17 @@ const ModalCreateStockTake = (props) => {
                             <tr>
                                 <th style={{ width: '35%' }}>Thuốc</th>
                                 <th style={{ width: '12%' }}>Đơn vị</th>
-                                <th style={{ width: '15%' }}>SL hệ thống</th>
-                                <th style={{ width: '18%' }}>SL thực tế</th>
-                                <th style={{ width: '20%' }}>Chênh lệch</th>
-                                <th style={{ width: '10%' }}>Điều chỉnh</th>
-                                <th style={{ width: '10%' }}>Tiêu hủy</th>
+                                <th style={{ width: '13%' }}>SL hệ thống</th>
+                                <th style={{ width: '16%' }}>SL thực tế</th>
+                                <th style={{ width: '12%' }}>Chênh lệch</th>
+                                <th style={{ width: '12%' }}>Điều chỉnh</th>
+                                <th style={{ width: '12%' }}>Tiêu hủy</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.length === 0 && !loading &&
                                 <tr>
-                                    <td colSpan={7} className="text-center text-muted">
+                                    <td colSpan={8} className="text-center text-muted">
                                         Không có lô hàng nào trong kho
                                     </td>
                                 </tr>
@@ -194,6 +212,8 @@ const ModalCreateStockTake = (props) => {
                             {items.map((item, index) => {
                                 const actual = parseFloat(item.actualQuantity) || 0;
                                 const diff = actual - item.systemQuantity;
+                                const absDiff = Math.abs(diff);
+                                const ok = (parseFloat(item.adjustQuantity) || 0) + (parseFloat(item.destroyQuantity) || 0) === absDiff;
                                 return (
                                     <tr key={`item-row-${index}`}>
                                         <td>{item.medicineName}</td>
@@ -216,25 +236,33 @@ const ModalCreateStockTake = (props) => {
                                                 {diff > 0 ? `+${diff}` : diff}
                                             </span>
                                         </td>
-                                        <td className="text-center">
+                                        <td>
                                             <input
-                                                type="checkbox"
-                                                checked={!!item.isAdjust}
+                                                type="number"
+                                                className="form-control form-control-sm"
+                                                value={item.adjustQuantity}
+                                                min="0"
                                                 disabled={diff === 0}
                                                 onChange={(event) =>
-                                                    handleChangeFlag(index, 'isAdjust', event.target.checked)
+                                                    handleReviewQuantity(index, 'adjustQuantity', event.target.value)
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                className="form-control form-control-sm"
+                                                value={item.destroyQuantity}
+                                                min="0"
+                                                disabled={diff === 0}
+                                                onChange={(event) =>
+                                                    handleReviewQuantity(index, 'destroyQuantity', event.target.value)
                                                 }
                                             />
                                         </td>
                                         <td className="text-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={!!item.isDestroy}
-                                                disabled={diff === 0}
-                                                onChange={(event) =>
-                                                    handleChangeFlag(index, 'isDestroy', event.target.checked)
-                                                }
-                                            />
+                                            {absDiff !== 0 && !ok && <span className="text-danger small">≠ |Diff|</span>}
+                                            {absDiff !== 0 && ok && <span className="text-success small">OK</span>}
                                         </td>
                                     </tr>
                                 );

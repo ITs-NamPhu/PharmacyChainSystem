@@ -46,6 +46,36 @@ namespace PharmacyManagement.Controllers
             return Success(null, "Delete goods receipt successfully.");
         }
 
+        [HttpPut("{id}/approve")]
+        [HasPermission("GOODSRECEIPT_UPDATE")]
+        public async Task<IActionResult> Approve(long id)
+        {
+            var branchId = GetBranchIdFromHeader();
+            var userId = GetUserIdFromToken();
+            await _service.ApproveAsync(id, userId, branchId);
+            return Success(null, "Approve goods receipt successfully.");
+        }
+
+        [HttpPut("{id}/reject")]
+        [HasPermission("GOODSRECEIPT_UPDATE")]
+        public async Task<IActionResult> Reject(long id)
+        {
+            var branchId = GetBranchIdFromHeader();
+            var userId = GetUserIdFromToken();
+            await _service.RejectAsync(id, userId, branchId);
+            return Success(null, "Reject goods receipt successfully.");
+        }
+
+        [HttpPut("{id}/complete")]
+        [HasPermission("GOODSRECEIPT_UPDATE")]
+        public async Task<IActionResult> Complete(long id)
+        {
+            var branchId = GetBranchIdFromHeader();
+            var userId = GetUserIdFromToken();
+            var result = await _service.CompleteAsync(id, userId, branchId);
+            return Success(result, "Complete goods receipt successfully.");
+        }
+
         [HttpGet("{id}")]
         [HasPermission("GOODSRECEIPT_VIEW")]
         public async Task<IActionResult> GetById(long id)

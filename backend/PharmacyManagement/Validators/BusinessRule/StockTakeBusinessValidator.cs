@@ -43,5 +43,25 @@ namespace PharmacyManagement.Validators.BusinessRule
 
             return batches;
         }
+
+        public void ValidateBalanceEquation(IEnumerable<StockTakeItem> items)
+        {
+            foreach (var item in items)
+            {
+                var absDiff = Math.Abs(item.DifferenceQuantity);
+                if (item.AdjustQuantity + item.DestroyQuantity != absDiff)
+                    throw new BusinessException(
+                        $"BatchID {item.BatchID}: AdjustQuantity({item.AdjustQuantity}) + " +
+                        $"DestroyQuantity({item.DestroyQuantity}) phải bằng |Diff|({absDiff}).",
+                        "ST010",
+                        StatusCodes.Status400BadRequest);
+
+                if (item.AdjustQuantity < 0 || item.DestroyQuantity < 0)
+                    throw new BusinessException(
+                        $"BatchID {item.BatchID}: AdjustQuantity và DestroyQuantity phải >= 0.",
+                        "ST011",
+                        StatusCodes.Status400BadRequest);
+            }
+        }
     }
 }

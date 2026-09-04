@@ -1,3 +1,4 @@
+using PharmacyManagement.DTOs.DestroyReceipt;
 using PharmacyManagement.Models;
 
 namespace PharmacyManagement.Repositories.Interfaces
@@ -5,9 +6,10 @@ namespace PharmacyManagement.Repositories.Interfaces
     public interface IDestroyReceiptRepository
     {
         Task<DestroyReceipt?> GetByIdAsync(long id);
-        Task<List<DestroyReceipt>> GetAllAsync(int skip, int take, long warehouseId);
+        Task<List<DestroyReceiptResponse>> GetAllAsync(int skip, int take, long warehouseId);
         Task<int> CountAsync(long warehouseId);
         Task AddAsync(DestroyReceipt entity);
+        void Delete(DestroyReceipt entity);
         Task<WareHouse?> GetWarehouseByIdAsync(long warehouseId);
         Task<bool> HasDestroyReceiptAsync(long stockTakeId);
         Task<StockTake?> GetStockTakeByIdAsync(long stockTakeId);

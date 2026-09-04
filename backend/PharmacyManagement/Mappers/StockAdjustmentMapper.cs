@@ -9,7 +9,7 @@ namespace PharmacyManagement.Mappers
         {
             return new StockAdjustment
             {
-                WarehouseID = 0,
+                WarehouseID = request.WarehouseID,
                 UserID = userId,
                 StockTakeID = request.StockTakeID,
                 Note = request.Note,
@@ -31,6 +31,19 @@ namespace PharmacyManagement.Mappers
             };
         }
 
+        public static StockAdjustmentItem ToEntity(
+            this UpdateStockAdjustmentItemRequest request,
+            long stockAdjustmentId)
+        {
+            return new StockAdjustmentItem
+            {
+                StockAdjustmentID = stockAdjustmentId,
+                BatchID = request.BatchID,
+                AdjustQuantity = request.AdjustQuantity,
+                ReasonCode = request.ReasonCode
+            };
+        }
+
         public static StockAdjustmentResponse ToResponse(this StockAdjustment entity)
         {
             return new StockAdjustmentResponse
@@ -43,8 +56,10 @@ namespace PharmacyManagement.Mappers
                 UserName = entity.User?.FullName ?? string.Empty,
                 Note = entity.Note ?? string.Empty,
                 CreatedAt = entity.CreatedAt,
+                Status = entity.Status.ToString(),
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
+                IsFromStockTake = entity.StockTakeID.HasValue,
                 ItemCount = entity.StockAdjustmentItem?.Count ?? 0
             };
         }
@@ -61,8 +76,10 @@ namespace PharmacyManagement.Mappers
                 UserName = entity.User?.FullName ?? string.Empty,
                 Note = entity.Note ?? string.Empty,
                 CreatedAt = entity.CreatedAt,
+                Status = entity.Status.ToString(),
                 ApprovedBy = entity.ApprovedBy,
                 ApprovedAt = entity.ApprovedAt,
+                IsFromStockTake = entity.StockTakeID.HasValue,
                 Items = entity.StockAdjustmentItem?.Select(item => new StockAdjustmentItemDetailResponse
                 {
                     StockAdjustmentItemID = item.StockAdjustmentItemID,

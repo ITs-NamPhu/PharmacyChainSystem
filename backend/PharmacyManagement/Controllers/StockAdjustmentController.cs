@@ -25,13 +25,49 @@ namespace PharmacyManagement.Controllers
             return Success(result, "Create stock adjustment successfully.");
         }
 
-        [HttpPost("{id}/approve")]
+        [HttpPut("{id}")]
+        [HasPermission("STOCK_ADJUSTMENT_CREATE")]
+        public async Task<IActionResult> Update(long id, UpdateStockAdjustmentRequest request)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.UpdateAsync(id, request, userId);
+            return Success(result, "Update stock adjustment successfully.");
+        }
+
+        [HttpPut("{id}/complete")]
+        [HasPermission("STOCK_ADJUSTMENT_CREATE")]
+        public async Task<IActionResult> Complete(long id)
+        {
+            var userId = GetUserIdFromToken();
+            var result = await _service.CompleteAsync(id, userId);
+            return Success(result, "Complete stock adjustment successfully.");
+        }
+
+        [HttpPut("{id}/approve")]
         [HasPermission("STOCK_ADJUSTMENT_APPROVE")]
         public async Task<IActionResult> Approve(long id)
         {
             var userId = GetUserIdFromToken();
             await _service.ApproveAsync(id, userId);
             return Success(null, "Approve stock adjustment successfully.");
+        }
+
+        [HttpPut("{id}/reject")]
+        [HasPermission("STOCK_ADJUSTMENT_APPROVE")]
+        public async Task<IActionResult> Reject(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.RejectAsync(id, userId);
+            return Success(null, "Reject stock adjustment successfully.");
+        }
+
+        [HttpDelete("{id}")]
+        [HasPermission("STOCK_ADJUSTMENT_DELETE")]
+        public async Task<IActionResult> Delete(long id)
+        {
+            var userId = GetUserIdFromToken();
+            await _service.DeleteAsync(id, userId);
+            return Success(null, "Delete stock adjustment successfully.");
         }
 
         [HttpGet("{id}")]
