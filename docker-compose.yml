@@ -22,6 +22,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: pharmacy-redis
+
+    ports:
+      - "6379:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: ./backend
@@ -32,6 +45,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
     ports:
       - "5000:8080"
@@ -39,6 +54,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ConnectionStrings__PharSystemConnection: "Server=db,1433;Database=PharmacySystem;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+      RedisConnection: redis:6379
 
   react:
     build:

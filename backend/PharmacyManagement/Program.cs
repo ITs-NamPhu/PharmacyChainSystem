@@ -27,6 +27,8 @@ using Microsoft.AspNetCore.Authorization;
 
 using Hangfire;
 
+using StackExchange.Redis;
+
 namespace PharmacyManagement
 {
     public class Program
@@ -36,6 +38,20 @@ namespace PharmacyManagement
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddMemoryCache();
+
+            var redisConnection = builder.Configuration["RedisConnection"] ?? "localhost:6379";
+
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnection;
+                options.InstanceName = "PharmacySys_";
+            });
+
+            // Multiplexer dùng cho IdempotencyMiddleware (SET NX ... ).
+            // AbortOnConnectFail=false: không ném lỗi khi Redis chưa sẵn sàng, thử kết nối lại nền.
+            builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnection, opts => opts.AbortOnConnectFail = false));
+            builder.Services.AddScoped(sp => sp.GetRequiredService<IConnectionMultiplexer>().GetDatabase());
 
             // Add services to the container.
             builder.Services.AddDbContext<PharmacySystemDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("PharSystemConnection")));
@@ -274,6 +290,7 @@ namespace PharmacyManagement
             app.UseHttpsRedirection();
             app.UseCors("ReactPolicy");
             app.UseAuthentication();
+            app.UseMiddleware<IdempotencyMiddleware>();
             app.UseAuthorization();
 
             app.MapControllers();
