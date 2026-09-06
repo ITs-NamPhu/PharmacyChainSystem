@@ -28,6 +28,8 @@ using Microsoft.AspNetCore.Authorization;
 using Hangfire;
 
 using StackExchange.Redis;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace PharmacyManagement
 {
@@ -52,6 +54,30 @@ namespace PharmacyManagement
             builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConnection, opts => opts.AbortOnConnectFail = false));
             builder.Services.AddScoped(sp => sp.GetRequiredService<IConnectionMultiplexer>().GetDatabase());
+
+            builder.Services.AddRateLimiter(rateLimit =>
+            {
+                rateLimit.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                rateLimit.AddPolicy("Limit_Per_IP", httpContext =>
+                {
+                    var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetTokenBucketLimiter(ipAddress, _ => new TokenBucketRateLimiterOptions
+                    {
+                        TokenLimit = 10,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 5,
+                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                    });
+                });
+
+                rateLimit.AddConcurrencyLimiter("Limit_Concurrent_Requests", options =>
+                {
+                    options.PermitLimit = 5; // Số lượng request đồng thời tối đa
+                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    options.QueueLimit = 4; // Số lượng request chờ tối đa
+                });
+            });
 
             // Add services to the container.
             builder.Services.AddDbContext<PharmacySystemDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("PharSystemConnection")));
@@ -289,7 +315,9 @@ namespace PharmacyManagement
 
             app.UseHttpsRedirection();
             app.UseCors("ReactPolicy");
+
             app.UseAuthentication();
+            app.UseRateLimiter();
             app.UseMiddleware<IdempotencyMiddleware>();
             app.UseAuthorization();
 

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PharmacyManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace PharmacyManagement.Controllers
 {
@@ -16,6 +17,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [AllowAnonymous] // cho phép truy cập không cần token
+        [EnableRateLimiting("Limit_Per_IP")]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
@@ -25,6 +27,7 @@ namespace PharmacyManagement.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("Limit_Per_IP")]
         [HttpPost("refreshtoken")]
         public async Task<IActionResult> RefreshToken_Receive(RefreshTokenRequest request)
         {
