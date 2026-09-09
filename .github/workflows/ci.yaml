@@ -38,9 +38,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} 
 
-      - name: Build và đẩy (Push) Docker Image lên GHCR
+      - name: Build và đẩy Image Backend
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./backend
           push: true
-          tags: ghcr.io/namphu2810/supplychain_pharmacy:latest
+          tags: ghcr.io/namphu2810/supplychain_pharmacy-backend:latest
+      - name: Build và đẩy Image Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/pharmacymanage
+          push: true
+          tags: ghcr.io/namphu2810/supplychain_pharmacy-frontend:latest
