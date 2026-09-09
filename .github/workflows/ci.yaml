@@ -105,13 +105,3 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend/pharmacymanage
-          file: ./frontend/pharmacymanage/Dockerfile
-          push: ${{ github.event_name == 'push' }}
-          tags: ghcr.io/${{ github.repository }}-react:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
