@@ -7,7 +7,7 @@ on:
 jobs:
   # Job 1: Test code
   test-code:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Chạy Test
@@ -17,7 +17,7 @@ jobs:
   build-and-package:
     # job test-code phải thành công thì mới chạy
     needs: test-code 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     # Cấp quyền cho GitHub Actions ghi file vào kho chứa Packages
     permissions:
