@@ -41,7 +41,7 @@ jobs:
       - name: Build và đẩy Image Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./backend/PharmacyManagement
           push: true
           tags: ghcr.io/namphu2810/supplychain_pharmacy-backend:latest
       - name: Build và đẩy Image Frontend
