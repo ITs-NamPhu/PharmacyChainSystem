@@ -43,5 +43,4 @@ jobs:
         with:
           context: .
           push: true
-          # Đặt tên image theo định dạng: ghcr.io/tên-người-dùng/tên-repo:latest
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/namphu2810/supplychain_pharmacy:latest
