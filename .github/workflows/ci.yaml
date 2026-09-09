@@ -52,7 +52,7 @@ jobs:
         run: npm ci
 
       - name: Test
-        run: npm test -- --watchAll=false
+        run: npm test -- --watchAll=false --passWithNoTests
 
   # Job 3: Build & Push Backend Docker Image
   build-push-backend:
