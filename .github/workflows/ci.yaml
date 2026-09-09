@@ -2,46 +2,116 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  # Job 1: Test code
-  test-code:
+  # Job 1: Test Backend (.NET 9)
+  test-backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - name: Chạy Test
-        run: echo "Bước Test thành công!"
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Job 2: Đóng gói Container
-  build-and-package:
-    # job test-code phải thành công thì mới chạy
-    needs: test-code 
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore backend.sln
+
+      - name: Build
+        run: dotnet build backend.sln --no-restore -c Release
+
+      - name: Test
+        run: dotnet test backend.sln --no-build -c Release --verbosity normal
+
+  # Job 2: Test Frontend (React 18 / Node 22)
+  test-frontend:
     runs-on: ubuntu-latest
-    
-    # Cấp quyền cho GitHub Actions ghi file vào kho chứa Packages
+    defaults:
+      run:
+        working-directory: frontend/pharmacymanage
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/pharmacymanage/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test -- --watchAll=false
+
+  # Job 3: Build & Push Backend Docker Image
+  build-push-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
-      - name: Kéo mã nguồn
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Thiết lập Docker Buildx (Công cụ hỗ trợ build nâng cao)
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Đăng nhập vào GitHub Container Registry (GHCR)
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }} 
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build và đẩy (Push) Docker Image lên GHCR
+      - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          push: true
-          # Đặt tên image theo định dạng: ghcr.io/tên-người-dùng/tên-repo:latest
-          tags: ghcr.io/${{ github.repository }}:latest
+          context: ./backend
+          file: ./backend/PharmacyManagement/Dockerfile
+          push: ${{ github.event_name == 'push' }}
+          tags: ghcr.io/${{ github.repository }}-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 4: Build & Push Frontend Docker Image
+  build-push-frontend:
+    needs: test-frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/pharmacymanage
+          file: ./frontend/pharmacymanage/Dockerfile
+          push: ${{ github.event_name == 'push' }}
+          tags: ghcr.io/${{ github.repository }}-react:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
