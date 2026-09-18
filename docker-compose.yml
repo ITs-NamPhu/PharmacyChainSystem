@@ -30,7 +30,7 @@ services:
       - "6379:6379"
 
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,6 +56,26 @@ services:
       ConnectionStrings__PharSystemConnection: "Server=db,1433;Database=PharmacySystem;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
       RedisConnection: redis:6379
 
+  ai-agent:
+    build:
+      context: ./ai-agent
+      dockerfile: Dockerfile
+
+    container_name: pharmacy-ai-agent
+
+    depends_on:
+      - api
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - ./ai-agent/.env
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      BACKEND_URL: "http://api:8080"
+      LLM_MODEL: "gemini-3.6-flash"
+
   react:
     build:
       context: ./frontend/pharmacymanage
@@ -71,6 +91,8 @@ services:
 
     environment:
       REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_AI_URL: http://localhost:8000
+      WDS_SOCKET_PORT: 0
 
 volumes:
   sql_data:

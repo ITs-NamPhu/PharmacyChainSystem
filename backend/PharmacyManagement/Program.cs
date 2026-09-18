@@ -68,6 +68,7 @@ namespace PharmacyManagement
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 5,
                         ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                        TokensPerPeriod = 1
                     });
                 });
 
@@ -232,6 +233,7 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IDestroyReceiptRepository, DestroyReceiptRepository>();
             builder.Services.AddScoped<ICustomerDebtSummaryRepository, CustomerDebtSummaryRepository>();
             builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
+            builder.Services.AddScoped<IChatRepository, ChatRepository>();
 
             // Service
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -262,6 +264,7 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IReceiptService, ReceiptService>();
             builder.Services.AddScoped<IReconciliationService, ReconciliationService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<IChatService, ChatService>();
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
             builder.Services.AddScoped<ManualBatchSelectionStrategy>();
@@ -312,8 +315,10 @@ namespace PharmacyManagement
             }
 
             app.UseMiddleware<ExceptionMiddleware>();
-
-            app.UseHttpsRedirection();
+            if (!app.Environment.IsEnvironment("Docker"))
+            {
+                app.UseHttpsRedirection();
+            }
             app.UseCors("ReactPolicy");
 
             app.UseAuthentication();
@@ -324,6 +329,26 @@ namespace PharmacyManagement
             app.MapControllers();
 
             app.UseHangfireDashboard("/hangfire");
+
+            if (app.Environment.IsEnvironment("Docker"))
+            {
+                using var scope = app.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<PharmacySystemDbContext>();
+                db.Database.Migrate();
+
+                // khai báo Hangfire trước khi đăng ký RecurringJob.
+                // Background server của Hangfire cài schema lúc khởi động - trước khi DB được tạo - nên cần tự cài lại.
+                var connectionString = builder.Configuration.GetConnectionString("PharSystemConnection");
+                using var conn = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                var assembly = typeof(Hangfire.SqlServer.SqlServerStorage).Assembly;
+                using var stream = assembly.GetManifestResourceStream("Hangfire.SqlServer.Install.sql");
+                using var reader = new System.IO.StreamReader(stream);
+                cmd.CommandText = reader.ReadToEnd();
+                cmd.CommandTimeout = 300;
+                cmd.ExecuteNonQuery();
+            }
 
             // Job chạy vào lúc 00:01 sáng ngày mùng 1 hàng tháng
             RecurringJob.AddOrUpdate<DebtSummaryService>(
@@ -350,13 +375,6 @@ namespace PharmacyManagement
                     TimeZone = TimeZoneInfo.Local
                 }
                 );
-
-            if (app.Environment.IsEnvironment("Docker"))
-            {
-                using var scope = app.Services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<PharmacySystemDbContext>();
-                db.Database.Migrate();
-            }
 
             app.Run();
         }

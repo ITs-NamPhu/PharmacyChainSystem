@@ -1,68 +1,52 @@
-1. Tách validation bằng FluentValidation và viết trong thư mục Validators
-Ví dụ:
-public class CreateUserValidator
-    : AbstractValidator<CreateUserRequest>
-{
-    public CreateUserValidator()
-    {
-        RuleFor(x => x.UserName)
-            .NotEmpty()
-            .MaximumLength(50);
-
-        RuleFor(x => x.Password)
-            .NotEmpty()
-            .MinimumLength(8);
-
-        RuleFor(x => x.Email)
-            .EmailAddress();
-
-        RuleFor(x => x.Phone)
-            .Matches(@"^[0-9]{10}$");
-    }
-}
-
-2. BusinessRule dùng để validation nhưng cần truy vấn database
-ví dụ: kiểm tra user đã tồn tại
-private async Task ValidateBusinessAsync(CreateUserRequest request)
-{
-    if(await _repository.IsUserNameExistAsync(
-            request.UserName,
-            request.BranchId))
-    {
-        throw new BusinessException(...);
-    }
-}
-trong service chỉ cần gọi await ValidateBusinessAsync(request);
-
-3. Mapping request
-public static class UserMapper
-{
-    public static User ToEntity(CreateUserRequest request)
-    {
-        return new User
-        {
-            UserName = request.UserName,
-            PasswordHash = BC.HashPassword(request.Password),
-            ...
-        };
-    }
-}
-trong service chỉ cần gọi var user = UserMapper.ToEntity(request);
-
-4. Mapping response
-public static UserResponse ToResponse(this User user)
-{
-    return new UserResponse
-    {
-        ...
-    };
-}
-
-Từ return new UserResponse
-{
-    ...
-};
-chuyển sang return user.ToResponse();
+pharmacy-ai-service/
+│
+├── app/
+│   │
+│   ├── api/
+│   │   └── chat.py
+│   │
+│   ├── agents/
+│   │   └── pharmacy_agent.py
+│   │
+│   ├── tools/
+│   │   ├── inventory_tools.py
+│   │   ├── sales_tools.py
+│   │   └── purchase_tools.py
+│   │
+│   ├── rag/
+│   │   ├── retriever.py
+│   │   ├── embeddings.py
+│   │   └── documents.py
+│   │
+│   ├── services/
+│   │   └── llm_service.py
+│   │
+│   ├── models/
+│   │   └── chat.py
+│   │
+│   └── config/
+│       └── settings.py
+│
+├── main.py
+├── requirements.txt
+└── .env
 
 
-
+┌──────────────────────┐
+│   React Frontend     │
+│  (Chat Widget)       │
+│  port 3000           │
+└──────────┬───────────┘
+           │ HTTP
+           v
+┌──────────────────────┐     HTTP     ┌──────────────────────┐
+│   AI Agent Service   │ ──────────►  │   Backend API        │
+│   Python/FastAPI     │              │   ASP.NET Core 9     │
+│   LangChain+Gemini   │              │   port 8080          │
+│   port 8000          │              └──────────┬───────────┘
+└──────────────────────┘                         │ EF Core
+                                                 v
+                                      ┌──────────────────────┐
+                                      │   SQL Server         │
+                                      │   port 1433          │
+                                      └──────────────────────┘

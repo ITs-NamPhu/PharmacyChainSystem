@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PharmacyManagement.Models;
 
@@ -11,9 +12,11 @@ using PharmacyManagement.Models;
 namespace PharmacyManagement.Migrations
 {
     [DbContext(typeof(PharmacySystemDbContext))]
-    partial class PharmacySystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916100321_KhoiTaoCSDL-version1")]
+    partial class KhoiTaoCSDLversion1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -167,8 +170,7 @@ namespace PharmacyManagement.Migrations
 
                     b.HasKey("ConversationID");
 
-                    b.HasIndex("UserID", "UpdatedAt")
-                        .HasDatabaseName("IX_ChatConversation_UserID_UpdatedAt");
+                    b.HasIndex("UserID");
 
                     b.ToTable("ChatConversation", (string)null);
                 });
@@ -198,8 +200,7 @@ namespace PharmacyManagement.Migrations
 
                     b.HasKey("MessageID");
 
-                    b.HasIndex("ConversationID", "MessageID")
-                        .HasDatabaseName("IX_ChatMessage_ConversationID_MessageID");
+                    b.HasIndex("ConversationID");
 
                     b.ToTable("ChatMessage", (string)null);
                 });

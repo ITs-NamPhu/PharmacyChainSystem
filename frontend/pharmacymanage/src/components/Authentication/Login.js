@@ -33,8 +33,8 @@ const Login = (props) => {
             setIsLoading(false);
             navigate('/admin');
         }
-        if (res && res.EC !== 0) {
-            toast.error(res.EM);
+        if (res && res.ec !== 0) {
+            toast.error(res.em);
             setIsLoading(false);
         }
     }
