@@ -111,6 +111,15 @@ namespace PharmacyManagement.Models
             modelBuilder.Entity<ChatConversation>().ToTable("ChatConversation");
             modelBuilder.Entity<ChatMessage>().ToTable("ChatMessage");
 
+            // SQL Server không cho phép nhiều đường CASCADE trỏ đến cùng một bảng (Error 1785).
+            // Đặt mặc định tất cả FK là Restrict, các quan hệ cần cascade sẽ được bật lại bên dưới.
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(e => e.GetForeignKeys())
+                .Where(fk => fk.DeleteBehavior == DeleteBehavior.Cascade))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
+            }
+
             modelBuilder.Entity<RolePermission>(entity =>
             {
                 entity.HasKey(e => e.RolePermissionID);
@@ -161,6 +170,10 @@ namespace PharmacyManagement.Models
                     .WithMany()
                     .HasForeignKey(e => e.UserID)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // Index ghép hỗ trợ danh sách hội thoại của user theo UpdatedAt DESC
+                entity.HasIndex(e => new { e.UserID, e.UpdatedAt })
+                    .HasDatabaseName("IX_ChatConversation_UserID_UpdatedAt");
             });
 
             modelBuilder.Entity<ChatMessage>(entity =>
@@ -171,6 +184,10 @@ namespace PharmacyManagement.Models
                     .WithMany(c => c.Messages)
                     .HasForeignKey(e => e.ConversationID)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // Index ghép hỗ trợ cursor pagination (MessageID) theo từng hội thoại
+                entity.HasIndex(e => new { e.ConversationID, e.MessageID })
+                    .HasDatabaseName("IX_ChatMessage_ConversationID_MessageID");
             });
 
             modelBuilder.Entity<Invoice>()

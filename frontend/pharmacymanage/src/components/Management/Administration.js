@@ -3,6 +3,7 @@ import './Administration.scss';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
+import ChatWidget from '../ChatWidget/ChatWidget';
 import { Outlet } from "react-router-dom";
 
 const Administration = (props) => {
@@ -37,6 +38,7 @@ const Administration = (props) => {
                 </div>
                 <Footer />
             </div>
+            <ChatWidget />
         </div>
     );
 }
