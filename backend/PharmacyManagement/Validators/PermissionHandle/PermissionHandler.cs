@@ -17,7 +17,7 @@ namespace PharmacyManagement.Validators.PermissionHandle
             PermissionRequirement requirement)
         {
             var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            Console.WriteLine("userid:{0}", userIdClaim);
+            // Console.WriteLine("userid:{0}", userIdClaim);
             if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out var userId))
             {
                 return;
@@ -28,37 +28,37 @@ namespace PharmacyManagement.Validators.PermissionHandle
 
             var permissions = await permissionService.GetPermission(userId);
 
-            Console.WriteLine("===== CLAIMS =====");
+            // Console.WriteLine("===== CLAIMS =====");
 
-            foreach (var c in context.User.Claims)
-            {
-                Console.WriteLine($"{c.Type} = {c.Value}");
-            }
+            // foreach (var c in context.User.Claims)
+            // {
+            //     Console.WriteLine($"{c.Type} = {c.Value}");
+            // }
 
-            Console.WriteLine("==================");
+            // Console.WriteLine("==================");
 
-            Console.WriteLine("Permissions: " + string.Join(", ", permissions));
+            // Console.WriteLine("Permissions: " + string.Join(", ", permissions));
 
-            foreach (var p in permissions)
-            {
-                Console.WriteLine(
-                    $"{p} == {requirement.Permission} : " +
-                    string.Equals(
-                        p,
-                        requirement.Permission,
-                        StringComparison.OrdinalIgnoreCase));
-            }
+            // foreach (var p in permissions)
+            // {
+            //     Console.WriteLine(
+            //         $"{p} == {requirement.Permission} : " +
+            //         string.Equals(
+            //             p,
+            //             requirement.Permission,
+            //             StringComparison.OrdinalIgnoreCase));
+            // }
             if (permissions.Contains(requirement.Permission, StringComparer.OrdinalIgnoreCase))
             {
                 context.Succeed(requirement);
             }
 
-            Console.WriteLine("Pending requirements:");
+            // Console.WriteLine("Pending requirements:");
 
-            foreach (var r in context.PendingRequirements)
-            {
-                Console.WriteLine(r.GetType().Name);
-            }
+            // foreach (var r in context.PendingRequirements)
+            // {
+            //     Console.WriteLine(r.GetType().Name);
+            // }
         }
     }
 }

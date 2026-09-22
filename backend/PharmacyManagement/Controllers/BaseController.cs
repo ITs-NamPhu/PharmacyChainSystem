@@ -50,6 +50,28 @@ namespace PharmacyManagement.Controllers
             return role == "admin" || role == "manage_supply";
         }
 
+        /// <summary>
+        /// Xác định phạm vi chi nhánh cho các truy vấn AI.
+        /// - Nếu header X-Branch-Id hợp lệ: luôn dùng header.
+        /// - Admin / manage_supply không có header: null = lấy tất cả chi nhánh.
+        /// - Role khác không có header: bắt buộc (lỗi HDR001).
+        /// </summary>
+        protected long? ResolveBranchScope()
+        {
+            if (Request.Headers.TryGetValue("X-Branch-Id", out var branchIdValue)
+                && long.TryParse(branchIdValue.ToString(), out var branchId))
+            {
+                return branchId;
+            }
+
+            if (IsAdminOrManageSupply())
+            {
+                return null;
+            }
+
+            return GetBranchIdFromHeader();
+        }
+
         protected IActionResult Success(object? data = null, string message = "Success",int encode = 0)
         {
             return Ok(new ApiResponse<object>
