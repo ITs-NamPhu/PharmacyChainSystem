@@ -265,6 +265,7 @@ namespace PharmacyManagement
             builder.Services.AddScoped<IReconciliationService, ReconciliationService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<IAiSearchService, AiSearchService>();
             // Batch selection
             builder.Services.AddScoped<FefoBatchSelectionStrategy>();
             builder.Services.AddScoped<ManualBatchSelectionStrategy>();

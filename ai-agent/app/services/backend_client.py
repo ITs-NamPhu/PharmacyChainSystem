@@ -52,7 +52,21 @@ class BackendClient:
             logger.error(f"Backend request failed: {method} {path} - {e}")
             raise BackendError(f"Không thể kết nối đến backend: {e}")
 
-        data = resp.json()
+        try:
+            data = resp.json()
+        except ValueError:
+            snippet = (resp.text or "")[:300]
+            logger.error(
+                f"Backend tra ve khong phai JSON: {method} {path} "
+                f"- HTTP {resp.status_code} - {snippet}"
+            )
+            raise BackendError(
+                message=f"Backend tra loi HTTP {resp.status_code}: {snippet}",
+                status_code=resp.status_code,
+            )
+
+        if not isinstance(data, dict):
+            return data
 
         ec = data.get("EC") or data.get("ec")
         if ec is not None and ec != 0:
@@ -60,7 +74,18 @@ class BackendClient:
             logger.warning(f"Backend error: {method} {path} - EC={ec}, EM={em}")
             raise BackendError(message=em, status_code=resp.status_code)
 
-        return data.get("DT") or data.get("dt")
+        if resp.status_code >= 400:
+            em = data.get("EM") or data.get("em")
+            raise BackendError(
+                message=em or f"Backend tra loi HTTP {resp.status_code}",
+                status_code=resp.status_code,
+            )
+
+        if "DT" in data:
+            return data["DT"]
+        if "dt" in data:
+            return data["dt"]
+        return data
 
     async def get(self, path: str, params: dict = None,
                   token: str = None, branch_id: str = None) -> Any:

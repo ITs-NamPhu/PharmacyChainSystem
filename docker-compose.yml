@@ -72,9 +72,7 @@ services:
     env_file:
       - ./ai-agent/.env
     environment:
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       BACKEND_URL: "http://api:8080"
-      LLM_MODEL: "gemini-3.6-flash"
 
   react:
     build:

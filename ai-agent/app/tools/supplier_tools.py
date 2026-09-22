@@ -1,16 +1,21 @@
 import json
 from langchain_core.tools import tool
 
-from app.tools.base import api_get
+from app.tools.base import api_get, get_field
 from app.models.chat import AuthContext
 
 
 def create_supplier_tools(auth: AuthContext):
     @tool
     async def search_supplier(query: str = "") -> str:
-        """Tim kiem nha cung cap theo ten.
+        """NHÀ CUNG CẤP - Tìm kiếm nhà cung cấp theo tên.
+        Kết quả gồm: SupplierID, SupplierName, Phone, Email, Address.
         Args:
-            query: Ten nha cung cap (de trong = xem tat ca)
+            query: Tên nhà cung cấp (để trống = xem tất cả)
+
+        KẾT HỢP ENTITY:
+        - "nhà cung cấp X" → query="X".
+        - "phiếu nhập hàng của nhà cung cấp X" → dùng search_goods_receipts(keyword="X").
         """
         data = await api_get(
             "/api/Supplier/GetAll",
@@ -20,7 +25,7 @@ def create_supplier_tools(auth: AuthContext):
         )
         if isinstance(data, dict) and "error" in data:
             return data["error"]
-        suppliers = data.get("Suppliers", []) if isinstance(data, dict) else data
+        suppliers = get_field(data, "Suppliers", []) if isinstance(data, dict) else data
         if query:
             suppliers = [
                 s for s in suppliers

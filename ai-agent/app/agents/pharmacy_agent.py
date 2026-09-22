@@ -6,7 +6,7 @@ from langgraph.prebuilt import create_react_agent
 from app.models.chat import AuthContext
 from app.services.llm_service import create_llm
 from app.tools import create_all_tools
-from app.agents.prompts import SYSTEM_PROMPT
+from app.agents.prompts import build_system_prompt
 from app.agents.memory import memory_manager
 
 
@@ -63,6 +63,6 @@ def create_pharmacy_agent(session_id: str, auth: AuthContext):
     agent = create_react_agent(
         model=llm,
         tools=tools,
-        prompt=SYSTEM_PROMPT
+        prompt=build_system_prompt()
     )
     return agent

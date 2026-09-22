@@ -8,7 +8,7 @@ from app.models.chat import AuthContext
 def create_branch_tools(auth: AuthContext):
     @tool
     async def list_branches() -> str:
-        """Xem danh sach tat ca cac chi nhanh nha thuoc."""
+        """Xem danh sách tất cả các chi nhánh của hệ thống nhà thuốc."""
         data = await api_get(
             "/api/Branch/All",
             token=auth.token,
