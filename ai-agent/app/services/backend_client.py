@@ -10,9 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class BackendError(Exception):
-    def __init__(self, message: str, status_code: int = 500):
+    def __init__(self, message: str, status_code: int = 500, ec=None):
         self.message = message
         self.status_code = status_code
+        self.ec = ec
         super().__init__(self.message)
 
 
@@ -20,6 +21,7 @@ class BackendClient:
     def __init__(self, base_url: str = None):
         self.base_url = base_url or settings.BACKEND_URL
         self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
+        self.token_expired = False
 
     async def close(self):
         await self.client.aclose()
@@ -70,9 +72,12 @@ class BackendClient:
 
         ec = data.get("EC") or data.get("ec")
         if ec is not None and ec != 0:
+            # EC=-999 = access token hết hạn -> bật cờ báo cho chat.py gửi auth_error
+            if ec == -999:
+                self.token_expired = True
             em = data.get("EM") or data.get("em", "Unknown error")
             logger.warning(f"Backend error: {method} {path} - EC={ec}, EM={em}")
-            raise BackendError(message=em, status_code=resp.status_code)
+            raise BackendError(message=em, status_code=resp.status_code, ec=ec)
 
         if resp.status_code >= 400:
             em = data.get("EM") or data.get("em")

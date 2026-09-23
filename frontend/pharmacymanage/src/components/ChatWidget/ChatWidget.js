@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatHistory from './ChatHistory';
 import { useChatStore, NEW_KEY } from '../../stores/chatStore';
-import { sendMessage, clearChatHistory, parseSSEStream } from './chatService';
+import { sendMessage, clearChatHistory, parseSSEStream, isTokenExpiringSoon } from './chatService';
+import { postRefreshToken } from '../../services/apiService';
+import { doRefreshToken } from '../../redux/action/userAction';
+import { store } from '../../redux/store';
 import './ChatWidget.scss';
 
 const ChatWidget = () => {
@@ -23,6 +26,7 @@ const ChatWidget = () => {
     const token = useSelector((state) => state.user.account.access_token);
     const branchId = useSelector((state) => state.user.account.currentBranchId);
     const isAuthenticated = useSelector((state) => state.user.isAuthentication);
+    const dispatch = useDispatch();
 
     const activeKey = activeConversationId ? String(activeConversationId) : NEW_KEY;
 
@@ -110,29 +114,26 @@ const ChatWidget = () => {
         return () => observer.disconnect();
     }, [view, hasMore, loadOlderMessages, messages.length]);
 
-    const handleSend = async (text) => {
-        if (!token) return;
+    // Gọi sang .NET lấy Access Token mới, lưu vào Redux; trả token mới (null nếu thất bại)
+    const refreshTokenNow = async () => {
+        const { access_token, refresh_token } = store.getState().user.account;
+        const res = await postRefreshToken({ accessToken: access_token, refreshToken: refresh_token });
+        if (res?.ec === 0) {
+            dispatch(doRefreshToken(res));
+            return res.dt.accessToken;
+        }
+        return null;
+    };
 
-        const key = activeConversationId ? String(activeConversationId) : NEW_KEY;
-        const userMessage = {
-            id: Date.now(),
-            sender: 'user',
-            content: text,
-            timestamp: new Date().toISOString(),
-            done: true,
-        };
-
-        stickToBottomRef.current = true;
-        appendMessage(key, userMessage);
-        setIsStreaming(true);
-        setCurrentToolCall(null);
+    // Mở SSE đọc stream; trả true nếu gặp auth_error (đã chủ động đóng kết nối)
+    const runStream = async (text, currentToken, key) => {
+        const response = await sendMessage(text, currentToken, branchId, activeConversationId);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiContent = '';
+        let authError = false;
 
         try {
-            const response = await sendMessage(text, token, branchId, activeConversationId);
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let aiContent = '';
-
             await parseSSEStream(reader, decoder, (data) => {
                 if (data.type === 'text') {
                     aiContent += data.content;
@@ -151,11 +152,64 @@ const ChatWidget = () => {
                     }
                 } else if (data.type === 'error') {
                     appendError(key, data.content || 'Da xay ra loi.');
+                } else if (data.type === 'auth_error') {
+                    // đóng kết nối SSE hiện tại, báo cho handleSend refresh + retry
+                    authError = true;
+                    reader.cancel();
                 }
             });
         } catch (error) {
-            const keyNow = activeConversationId ? String(activeConversationId) : NEW_KEY;
-            appendError(keyNow, 'Khong the ket noi toi AI Agent. Vui long thu lai.');
+            // Mất kết nối mạng hoặc body đã bị đóng
+        }
+        return authError;
+    };
+
+    const handleSend = async (text) => {
+        const getToken = () => store.getState().user.account.access_token;
+        if (!getToken()) return;
+
+        const key = activeConversationId ? String(activeConversationId) : NEW_KEY;
+
+        // B1: Token sắp chết (< 1 phút)? -> âm thầm refresh trước khi gọi FastAPI
+        if (isTokenExpiringSoon(getToken())) {
+            const fresh = await refreshTokenNow();
+            if (!fresh) {
+                appendError(key, 'Phien dang nhap da het han. Vui long dang nhap lai.');
+                return;
+            }
+        }
+        if (!getToken()) return;
+
+        const userMessage = {
+            id: Date.now(),
+            sender: 'user',
+            content: text,
+            timestamp: new Date().toISOString(),
+            done: true,
+        };
+
+        stickToBottomRef.current = true;
+        appendMessage(key, userMessage);
+        setIsStreaming(true);
+        setCurrentToolCall(null);
+
+        try {
+            // B2: Stream + tự retry đúng 1 lần khi gặp auth_error (self-healing)
+            let currentToken = getToken();
+            for (let retry = 0; retry < 2; retry++) {
+                if (isTokenExpiringSoon(currentToken)) {
+                    const fresh = await refreshTokenNow();
+                    if (!fresh) break;
+                    currentToken = fresh;
+                }
+                const authError = await runStream(text, currentToken, key);
+                if (!authError) break;
+                const fresh = await refreshTokenNow();
+                if (!fresh) break;
+                currentToken = fresh;
+            }
+        } catch (error) {
+            appendError(key, 'Khong the ket noi toi AI Agent. Vui long thu lai.');
         } finally {
             setIsStreaming(false);
             setCurrentToolCall(null);
