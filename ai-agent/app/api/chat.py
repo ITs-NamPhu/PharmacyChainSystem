@@ -13,6 +13,8 @@ from app.models.chat import ChatRequest, AuthContext
 from app.agents.pharmacy_agent import create_pharmacy_agent
 from app.agents.memory import memory_manager
 from app.config.settings import settings
+from app.exceptions import TokenExpiredException
+from app.services.backend_client import backend_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ai", tags=["AI Chat"])
@@ -25,6 +27,17 @@ def _normalize_token(token: str) -> str:
     return token
 
 
+def _mark_expired_on_401(resp: httpx.Response):
+    """Nếu .NET trả EC=-999 (access token hết hạn) thì bật cờ báo cho stream."""
+    if resp.status_code == 401:
+        try:
+            body = resp.json()
+        except ValueError:
+            body = {}
+        if (body.get("ec") or body.get("EC")) == -999:
+            backend_client.token_expired = True
+
+
 async def load_history_from_dotnet(conversation_id: int, auth: AuthContext) -> list:
     """Kéo lịch sử chat từ .NET để nạp vào ngữ cảnh (Memory) của agent."""
     messages = []
@@ -35,6 +48,7 @@ async def load_history_from_dotnet(conversation_id: int, auth: AuthContext) -> l
                 params={"limit": settings.MAX_CHAT_HISTORY},
                 headers={"Authorization": _normalize_token(auth.token)},
             )
+            _mark_expired_on_401(resp)
             resp.raise_for_status()
             body = resp.json()
             dt = body.get("dt") or body.get("DT")
@@ -60,6 +74,7 @@ async def create_conversation_in_dotnet(first_message: str, auth: AuthContext) -
                 json={"firstMessage": first_message},
                 headers={"Authorization": _normalize_token(auth.token)},
             )
+            _mark_expired_on_401(resp)
             resp.raise_for_status()
             body = resp.json()
             dt = body.get("dt") or body.get("DT")
@@ -115,6 +130,7 @@ async def chat(
     async def stream_response() -> AsyncGenerator[str, None]:
         # Biến tích lũy toàn bộ câu trả lời của AI
         full_ai_response = ""
+        backend_client.token_expired = False  # reset cờ cho request hiện tại
 
         try:
             # Ngữ cảnh cũ (nếu có) + câu hỏi mới để LLM đọc được cả lịch sử
@@ -131,6 +147,10 @@ async def chat(
                 config=config,
                 version="v2",
             ):
+                # Token chết giữa chừng -> dừng luồng ngay, không để AI trả nội dung lỗi
+                if backend_client.token_expired:
+                    break
+
                 kind = event.get("event", "")
 
                 if kind == "on_chat_model_stream":
@@ -161,23 +181,34 @@ async def chat(
                     tool_name = event.get("name", "unknown")
                     yield f"data: {json.dumps({'type': 'tool_end', 'tool': tool_name}, ensure_ascii=False)}\n\n"
 
-            # KHI STREAM KẾT THÚC: chạy ngầm lưu cặp tin nhắn về .NET (không delay UI)
-            if conversation_id:
-                asyncio.create_task(
-                    save_history_to_dotnet(
-                        conversation_id=conversation_id,
-                        user_message=request.message,
-                        ai_message=full_ai_response,
-                        auth=auth,
-                    )
-                )
-
-            # Báo cho UI biết đã xong + cung cấp conversationId
-            yield f"data: {json.dumps({'type': 'done', 'conversationId': conversation_id}, ensure_ascii=False)}\n\n"
-
+        except TokenExpiredException:
+            # Exception ngắt trực tiếp lên chat.py -> vẫn báo auth_error
+            backend_client.token_expired = True
+            logger.warning("Token expired detected during agent stream")
         except Exception as e:
             logger.exception("Agent stream error")
             yield f"data: {json.dumps({'type': 'error', 'content': f'Đã xảy ra lỗi: {str(e)}'}, ensure_ascii=False)}\n\n"
+            return
+
+        # Bắn tín hiệu riêng cho React biết do token hết hạn (tự refresh + retry)
+        if backend_client.token_expired:
+            backend_client.token_expired = False
+            yield f"data: {json.dumps({'type': 'auth_error', 'content': 'Token expired'}, ensure_ascii=False)}\n\n"
+            return
+
+        # KHI STREAM KẾT THÚC: chạy ngầm lưu cặp tin nhắn về .NET (không delay UI)
+        if conversation_id:
+            asyncio.create_task(
+                save_history_to_dotnet(
+                    conversation_id=conversation_id,
+                    user_message=request.message,
+                    ai_message=full_ai_response,
+                    auth=auth,
+                )
+            )
+
+        # Báo cho UI biết đã xong + cung cấp conversationId
+        yield f"data: {json.dumps({'type': 'done', 'conversationId': conversation_id}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         stream_response(),

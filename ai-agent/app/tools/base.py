@@ -38,6 +38,8 @@ async def api_get(path: str, params: dict = None,
         return await backend_client.get(path, params=params,
                                         token=token, branch_id=branch_id)
     except BackendError as e:
+        if e.ec == -999:  # access token hết hạn -> bật cờ cho chat.py gửi auth_error
+            backend_client.token_expired = True
         return {"error": str(e)}
 
 
@@ -47,4 +49,6 @@ async def api_post(path: str, json_body: dict = None,
         return await backend_client.post(path, json_body=json_body,
                                          token=token, branch_id=branch_id)
     except BackendError as e:
+        if e.ec == -999:
+            backend_client.token_expired = True
         return {"error": str(e)}

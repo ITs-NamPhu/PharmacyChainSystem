@@ -1,7 +1,20 @@
+import { jwtDecode } from 'jwt-decode';
 import instance from '../../utils/axiosCustomize';
 
 const AI_AGENT_URL = process.env.REACT_APP_AI_URL || 'http://localhost:8000';
 const MESSAGE_LIMIT = 20;
+
+// Token sắp hết hạn chưa 1 phút (hoặc đã hết hạn)? -> cần refresh trước
+export const isTokenExpiringSoon = (accessToken, thresholdSec = 60) => {
+    if (!accessToken) return false;
+    try {
+        const { exp } = jwtDecode(accessToken); // exp tính bằng giây (Unix)
+        if (!exp) return false;
+        return exp * 1000 - Date.now() < thresholdSec * 1000;
+    } catch {
+        return false;
+    }
+};
 
 // Chuẩn hóa tin nhắn từ .NET (ChatMessageDto) -> shape ChatMessage component
 export const normalizeApiMessage = (m) => ({
