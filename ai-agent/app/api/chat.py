@@ -10,7 +10,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 from app.api.deps import get_auth_context
 from app.models.chat import ChatRequest, AuthContext
-from app.agents.pharmacy_agent import create_pharmacy_agent
+from app.agents.pharmacy_agent import create_pharmacy_agent, build_agent_callbacks, build_langfuse_metadata
 from app.agents.memory import memory_manager
 from app.config.settings import settings
 from app.exceptions import TokenExpiredException
@@ -126,6 +126,12 @@ async def chat(
     session_id = str(conversation_id) if conversation_id else request.session_id
     agent = create_pharmacy_agent(session_id, auth)
     config = {"configurable": {"session_id": session_id}}
+    callbacks = build_agent_callbacks()
+    if callbacks:
+        config["callbacks"] = callbacks
+        langfuse_metadata = build_langfuse_metadata(session_id, auth)
+        if langfuse_metadata:
+            config["metadata"] = {**config.get("metadata", {}), **langfuse_metadata}
 
     async def stream_response() -> AsyncGenerator[str, None]:
         # Biến tích lũy toàn bộ câu trả lời của AI

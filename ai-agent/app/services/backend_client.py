@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from typing import Any, Optional
 
 import httpx
@@ -35,6 +36,12 @@ class BackendClient:
         token: str = None,
         branch_id: str = None,
     ) -> Any:
+        t0 = time.perf_counter()
+
+        def log_result(level: str, message: str):
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            getattr(logger, level)(f"{method} {path} - {elapsed_ms:.1f}ms - {message}")
+
         headers = {}
         if token:
             # .NET yêu cầu "Bearer " prefix để xác thực JWT
@@ -51,23 +58,21 @@ class BackendClient:
                 headers=headers,
             )
         except httpx.RequestError as e:
-            logger.error(f"Backend request failed: {method} {path} - {e}")
+            log_result("error", f"request failed - {e}")
             raise BackendError(f"Không thể kết nối đến backend: {e}")
 
         try:
             data = resp.json()
         except ValueError:
             snippet = (resp.text or "")[:300]
-            logger.error(
-                f"Backend tra ve khong phai JSON: {method} {path} "
-                f"- HTTP {resp.status_code} - {snippet}"
-            )
+            log_result("error", f"non-JSON - HTTP {resp.status_code} - {snippet}")
             raise BackendError(
                 message=f"Backend tra loi HTTP {resp.status_code}: {snippet}",
                 status_code=resp.status_code,
             )
 
         if not isinstance(data, dict):
+            log_result("debug", f"HTTP {resp.status_code} non-dict payload")
             return data
 
         ec = data.get("EC") or data.get("ec")
@@ -76,16 +81,18 @@ class BackendClient:
             if ec == -999:
                 self.token_expired = True
             em = data.get("EM") or data.get("em", "Unknown error")
-            logger.warning(f"Backend error: {method} {path} - EC={ec}, EM={em}")
+            log_result("warning", f"EC={ec} EM={em}")
             raise BackendError(message=em, status_code=resp.status_code, ec=ec)
 
         if resp.status_code >= 400:
             em = data.get("EM") or data.get("em")
+            log_result("warning", f"HTTP {resp.status_code} - {em}")
             raise BackendError(
                 message=em or f"Backend tra loi HTTP {resp.status_code}",
                 status_code=resp.status_code,
             )
 
+        log_result("info", f"HTTP {resp.status_code} ok")
         if "DT" in data:
             return data["DT"]
         if "dt" in data:

@@ -4,3 +4,13 @@
 **/bin/
 **/obj/
 node_modules/
+
+# Python
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# AI eval reports
+ai-agent/reports/
+ai-agent/eval/reports/
