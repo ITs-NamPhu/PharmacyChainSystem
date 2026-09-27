@@ -5,6 +5,7 @@ from app.tools.branch_tools import create_branch_tools
 from app.tools.supplier_tools import create_supplier_tools
 from app.tools.goods_receipt_tools import create_goods_receipt_tools
 from app.tools.analytics_tools import create_analytics_tools
+from app.tools.forecast_tools import create_forecast_tools
 
 from app.models.chat import AuthContext
 

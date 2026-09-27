@@ -80,3 +80,35 @@ def mock_http():
 
     with respx.mock(assert_all_called=False) as router:
         yield router
+
+
+class StubRouterLLM:
+    """LLM giả cho router: with_structured_output trả RunnableLambda cố định.
+
+    GenericFakeChatModel không hỗ trợ with_structured_output nên cần lớp riêng.
+    """
+
+    def __init__(self, next_agent: str = "chat_agent", should_raise: bool = False):
+        from app.agents.router import RouteDecision
+
+        self.decision = RouteDecision(next_agent=next_agent)
+        self.should_raise = should_raise
+        self.captured: dict = {}
+
+    def bind_tools(self, tools, **kwargs):
+        return self
+
+    def with_structured_output(self, schema, **kwargs):
+        from langchain_core.runnables import RunnableLambda
+
+        async def _run(prompt_value, config=None):
+            self.captured["config"] = config
+            if self.should_raise:
+                raise ValueError("structured output hong")
+            return self.decision
+
+        return RunnableLambda(_run)
+
+
+def make_router_llm(next_agent: str = "chat_agent", should_raise: bool = False) -> StubRouterLLM:
+    return StubRouterLLM(next_agent=next_agent, should_raise=should_raise)

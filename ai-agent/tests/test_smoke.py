@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from app.api import chat as chat_module
 from app.config.settings import settings
 from main import app
-from tests.conftest import make_fake_llm
+from tests.conftest import make_fake_llm, make_router_llm
 
 client = TestClient(app)
 
@@ -31,15 +31,22 @@ def test_clear_requires_authorization():
 
 @pytest.fixture
 def fake_agent(monkeypatch):
-    """Thay create_pharmacy_agent trong chat.py bằng agent dùng fake LLM."""
+    """Thay create_supervisor_graph trong chat.py bằng graph dùng LLM giả.
 
-    real = chat_module.create_pharmacy_agent
+    Router luôn chuyển về chat_agent để smoke test chỉ tập trung vào luồng SSE.
+    """
+    real = chat_module.create_supervisor_graph
     llm = make_fake_llm([AIMessage(content="Cảm ơn bạn!")] * 6)
 
     def wrapped(session_id, auth):
-        return real(session_id, auth, llm=llm)
+        return real(
+            session_id,
+            auth,
+            llm=llm,
+            router_llm=make_router_llm("chat_agent"),
+        )
 
-    monkeypatch.setattr(chat_module, "create_pharmacy_agent", wrapped)
+    monkeypatch.setattr(chat_module, "create_supervisor_graph", wrapped)
     return wrapped
 
 

@@ -10,7 +10,9 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 from app.api.deps import get_auth_context
 from app.models.chat import ChatRequest, AuthContext
-from app.agents.pharmacy_agent import create_pharmacy_agent, build_agent_callbacks, build_langfuse_metadata
+from app.agents.supervisor import create_supervisor_graph
+from app.agents.router import ROUTER_TAG
+from app.agents.pharmacy_agent import build_agent_callbacks, build_langfuse_metadata
 from app.agents.memory import memory_manager
 from app.config.settings import settings
 from app.exceptions import TokenExpiredException
@@ -124,7 +126,7 @@ async def chat(
         conversation_id = await create_conversation_in_dotnet(request.message, auth)
 
     session_id = str(conversation_id) if conversation_id else request.session_id
-    agent = create_pharmacy_agent(session_id, auth)
+    agent = create_supervisor_graph(session_id, auth)
     config = {"configurable": {"session_id": session_id}}
     callbacks = build_agent_callbacks()
     if callbacks:
@@ -142,10 +144,6 @@ async def chat(
             # Ngữ cảnh cũ (nếu có) + câu hỏi mới để LLM đọc được cả lịch sử
             input_messages = [*history_messages, ("user", request.message)]
 
-            # payload = {
-            #     "input": request.message,
-            #     "chat_history": history_messages
-            # }
             
             async for event in agent.astream_events(
                 {"messages": input_messages},
@@ -158,6 +156,11 @@ async def chat(
                     break
 
                 kind = event.get("event", "")
+
+                # Bỏ qua event của router chỉ quyết định đi đâu,
+                # không phải nội dung trả lời cho người dùng.
+                if ROUTER_TAG in (event.get("tags") or []):
+                    continue
 
                 if kind == "on_chat_model_stream":
                     chunk = event.get("data", {}).get("chunk")

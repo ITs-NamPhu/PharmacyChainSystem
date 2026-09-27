@@ -60,5 +60,14 @@ namespace PharmacyManagement.Controllers
                 filter ?? new AiSalesFilterRequest(), ResolveBranchScope());
             return Success(result, "Search sales successfully.");
         }
+
+        [HttpPost("sales/history")]
+        [HasPermission("INVOICE_VIEW")]
+        public async Task<IActionResult> SalesHistory([FromBody] AiSalesHistoryRequest? filter)
+        {
+            var result = await _service.GetSalesHistoryAsync(
+                filter ?? new AiSalesHistoryRequest(), ResolveBranchScope());
+            return Success(result, "Sales history loaded successfully.");
+        }
     }
 }
