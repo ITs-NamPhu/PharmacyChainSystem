@@ -22,6 +22,24 @@ class Settings(BaseSettings):
     # --- Backend ---
     BACKEND_URL: str = "http://api:8080"
 
+    # --- Agent dự báo nhập hàng ---
+    # Tỉnh/thành dùng làm mặc định khi người dùng không nói rõ địa điểm
+    DEFAULT_LOCATION: str = "Ha Noi"
+    # Mức dự phòng an toàn khi đề xuất nhập (20%)
+    SAFETY_STOCK_RATIO: float = 0.2
+    FORECAST_LOOKBACK_DAYS: int = 30
+
+    # --- API ngoài (thời tiết / chất lượng không khí / lịch nghỉ lễ) ---
+    # OpenWeather dùng chung 1 key cho thời tiết (One Call 3.0), AQI và geocoding
+    OPENWEATHER_API_KEY: Optional[str] = None
+    EXTERNAL_API_TIMEOUT: float = 10.0
+    # Cache TTL (giây): thời tiết/AQI đổi chậm, geocoding gần như tĩnh
+    EXTERNAL_CACHE_TTL: int = 1800
+    GEOCODE_CACHE_TTL: int = 86400
+
+    # --- Google Trends (pytrends): thư viện không chính thức, dễ bị giới hạn ---
+    TRENDS_ENABLED: bool = True
+
     # --- Langfuse tracing (tùy chọn: thiếu key thì tắt trace, không crash) ---
     LANGFUSE_PUBLIC_KEY: Optional[str] = None
     LANGFUSE_SECRET_KEY: Optional[str] = None
@@ -39,6 +57,14 @@ class Settings(BaseSettings):
     @property
     def langfuse_enabled(self) -> bool:
         return bool(self.LANGFUSE_PUBLIC_KEY and self.LANGFUSE_SECRET_KEY)
+
+    @property
+    def openweather_enabled(self) -> bool:
+        return bool(self.OPENWEATHER_API_KEY)
+
+    @property
+    def trends_available(self) -> bool:
+        return self.TRENDS_ENABLED
 
 
 settings = Settings()

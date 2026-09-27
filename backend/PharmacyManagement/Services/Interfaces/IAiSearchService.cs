@@ -10,5 +10,6 @@ namespace PharmacyManagement.Services.Interfaces
         Task<PagedResult<AiCustomerItem>> SearchCustomersAsync(AiCustomerFilterRequest filter, long? branchScope);
         Task<AiAnalyticsResponse> SearchAnalyticsAsync(AiAnalyticsRequest filter, long? branchScope);
         Task<PagedResult<AiGoodsReceiptItem>> SearchGoodsReceiptsAsync(AiGoodsReceiptFilterRequest filter, long? branchScope);
+        Task<AiSalesHistoryDto> GetSalesHistoryAsync(AiSalesHistoryRequest filter, long? branchScope);
     }
 }
